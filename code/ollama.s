@@ -59,6 +59,9 @@ class App{
     return;
     */
 
+    echo('{"":"'+'x'.repeat(4096)+'"}\n')
+    flush()
+
     await callOllamaApi('chat', {
       query: { ...requestBody, stream: true },
       onClient: client=>{

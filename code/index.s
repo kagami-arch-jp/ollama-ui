@@ -10,7 +10,7 @@ class App{
         pragma: 'no-cache',
         expires: 0,
       });
-      sendFile(__dirname+'/dist/index.html');
+      sendFile(__dirname+'/../dist/index.html');
     }else{
       const actionName=this.getActionName()
 
