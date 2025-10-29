@@ -12,11 +12,11 @@ class App{
       });
       sendFile(__dirname+'/dist/index.html');
     }else{
-      const action=this.getActionName()
+      const actionName=this.getActionName()
 
       const result = { success: true, result: null, error: null };
 
-      const router = new this;
+      const router = new OllamaApp;
       try {
         const actionResult = await router[actionName]();
         if (actionResult === undefined) return;
