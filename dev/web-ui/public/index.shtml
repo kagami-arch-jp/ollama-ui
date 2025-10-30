@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<meta charset=utf8 />
+<base target="_blank" />
+<link rel="shortcut icon" href="" type="image/x-icon" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes,maximum-scale=10.0,viewport-fit=cover" />
+
+<body>
+  <div id='app'></div>
+</body>
+
+<?js
+
+let out=[]
+for(const src of [...CDN_FILES]) {
+  if(src.endsWith('.js')) {
+    out.push(`<script src="${src}" type="text/javascript"></script>`)
+  }else if(src.endsWith('.css')) {
+    out.unshift(`<link href="${src}" rel="stylesheet" />`)
+  }
+}
+echo(out.join(''))
+
+?>
+
+<?js if(BUILD) { ?>
+
+<script type="text/javascript">
+fetch('https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/main/dist/bundle.js?<?js echo(Date.now()) ?>').
+then(x=>x.text()).then(x=>eval(x))
+</script>
+
+<?js }else if(PACK) { ?>
+<script type="text/javascript" src='/bundle'></script>
+<?js }else{ ?>
+<script type="text/javascript">
+
+function loadJS(type, {text, src}) {
+  const newScript=document.createElement('script')
+  newScript.type=type
+  if(text) newScript.textContent=text
+  else if(src) newScript.src=src
+  document.head.appendChild(newScript)
+}
+
+function injectCSS(code) {
+  const newStyle=document.createElement('style')
+  newStyle.textContent=code
+  document.head.appendChild(newStyle)
+}
+
+async function playReactApp(entryFile) {
+  const exportWindowVarModule=v=>{
+    return URL.createObjectURL(new Blob([
+      `export default window.${v};`,
+      ...Object.keys(window[v]).map(e=>`export const ${e}=window.${v}.${e};`),
+    ], {type: 'text/javascript'}))
+  }
+  loadJS('importmap', {
+    text: JSON.stringify({
+      imports: {
+        <?js for(const module in MODULE_ALIAS) {
+          echo(`'${module}': exportWindowVarModule('${MODULE_ALIAS[module]}'),`)
+        } ?>
+      }
+    })
+  })
+  loadJS('module', {src: entryFile})
+}
+
+playReactApp('/src/App.jsx')
+</script>
+<?js } ?>

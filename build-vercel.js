@@ -19,7 +19,7 @@ function walk(dir, cb) {
 }
 
 const ls=[]
-for(const r of ['./code', './dist', './node_modules']) {
+for(const r of ['./server', './dist', './node_modules']) {
   walk(r, fn=>{
     if(!fn.match(/\.(html|css|js|s|json|cjs|mjs)$/)) return;
     ls.push(r+fn)

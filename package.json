@@ -1,6 +1,15 @@
 {
+	"scripts": {
+		"dev": "sptcd -d -w ./dev/web-ui/public -r ../dev.s",
+		"build": "sptc ./dev/web-ui/dev.s?action=build",
+		"vercel-app": "node build-vercel && node app"
+	},
 	"dependencies": {
 		"ollama": "0.6.0",
 		"sptc": "0.0.36"
+	},
+	"devDependencies": {
+		"@babel/standalone": "^7.26.4",
+		"less": "^4.3.0"
 	}
 }
