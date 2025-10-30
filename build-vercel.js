@@ -18,6 +18,7 @@ function walk(dir, cb) {
   }
 }
 
+console.log('update requirements..')
 const ls=[]
 for(const r of ['./server', './dist', './node_modules']) {
   walk(r, fn=>{
@@ -29,3 +30,4 @@ for(const r of ['./server', './dist', './node_modules']) {
 // console.log(ls)
 const appCode=fs.readFileSync('./app.js', 'utf8')
 fs.writeFileSync('./app.js', appCode.replace(/(\/\/ lock-begin)[\s\S]+(\/\/ lock-end)/, '$1\n'+ls.map(x=>`require('${x}');`).join('\n')+'\n$2'))
+console.log('done')

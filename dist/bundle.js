@@ -935,8 +935,8 @@ var store = exports.store = {
   messageHistory: (0, _reactCrossComponentState["default"])(function (_) {
     return [];
   }),
-  sendWithHistory: (0, _reactCrossComponentState["default"])(true),
-  enterSend: (0, _reactCrossComponentState["default"])(false),
+  sendWithHistory: (0, _reactCrossComponentState["default"])(false),
+  enterSend: (0, _reactCrossComponentState["default"])(true),
   multiLineInput: (0, _reactCrossComponentState["default"])(false),
   inputValue: (0, _reactCrossComponentState["default"])(''),
   dialogData: (0, _reactCrossComponentState["default"])({
@@ -1373,7 +1373,7 @@ function markdown(str) {
         }).replace(/\n/g, '<br />');
       },
       code: function code(e, lang) {
-        return "<pre><code class=\"hljs language-".concat(lang || 'markdown', "\">").concat(e.trim(), "</code></pre>");
+        return "<pre><code class=\"hljs language-".concat(lang || 'markdown', "\">").concat(e.text.trim(), "</code></pre>");
       }
     }
   });
@@ -1383,6 +1383,7 @@ function markdown(str) {
     silent: true
   });
 }
+window.M = markdown;
 function loadScript(_x3, _x4, _x5) {
   return _loadScript.apply(this, arguments);
 }

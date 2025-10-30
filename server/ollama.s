@@ -36,6 +36,18 @@ async function callOllamaApi(apiMethod, { onClient, onData, onEnd, query } = {})
   onEnd && onEnd(client)
 }
 
+Application.OLLAMA_CLIENTS=Application.OLLAMA_CLIENTS || {}
+const CLIENT_KEY=apiKey || 'local'
+function bindClient(c) {
+  Application.OLLAMA_CLIENTS[CLIENT_KEY]=c
+}
+function unbindClient(destory=true) {
+  if(destory) {
+    Application.OLLAMA_CLIENTS[CLIENT_KEY]?.abort?.()
+  }
+  delete Application.OLLAMA_CLIENTS[CLIENT_KEY]
+}
+
 class App{
 
   // Ollama のモデル一覧取得
@@ -65,12 +77,10 @@ class App{
     await callOllamaApi('chat', {
       query: { ...requestBody, stream: true },
       onClient: client=>{
-        Application.OLLAMA_CHAT_CLIENT=client
+        bindClient(client)
       },
       onEnd: client=>{
-        if(Application.OLLAMA_CHAT_CLIENT===client) {
-          Application.OLLAMA_CHAT_CLIENT=null
-        }
+        unbindClient()
       },
       onData: (err, isEnd, part) => {
         if (err) {
@@ -87,8 +97,7 @@ class App{
 
   // チャットリセット（Ollama のリクエストを中断）
   resetChatAction() {
-    Application.OLLAMA_CHAT_CLIENT?.abort();
-    Application.OLLAMA_CHAT_CLIENT=null
+    unbindClient()
     return true;
   }
 }

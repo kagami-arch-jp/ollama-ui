@@ -37,8 +37,8 @@ export const store={
   })),
   messageHistory: createSharedState(_=>([])),
 
-  sendWithHistory: createSharedState(true),
-  enterSend: createSharedState(false),
+  sendWithHistory: createSharedState(false),
+  enterSend: createSharedState(true),
   multiLineInput: createSharedState(false),
 
   inputValue: createSharedState(''),

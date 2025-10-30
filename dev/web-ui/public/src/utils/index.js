@@ -76,7 +76,7 @@ export function markdown(str) {
         .replace(/\n/g, '<br />')
     },
     code: (e, lang)=>{
-      return `<pre><code class="hljs language-${lang || 'markdown'}">${e.trim()}</code></pre>`
+      return `<pre><code class="hljs language-${lang || 'markdown'}">${e.text.trim()}</code></pre>`
     },
   }})
   return _marked.parse(str, {
@@ -85,6 +85,8 @@ export function markdown(str) {
     silent: true,
   })
 }
+
+window.M=markdown
 
 export async function loadScript(src, isModule, jscode) {
   return new Promise((resolve, reject)=>{
