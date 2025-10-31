@@ -525,10 +525,13 @@ function Msg(props) {
     className: "message"
   }, text || thinking ? isQuestion ? /*#__PURE__*/_react["default"].createElement("pre", {
     className: "user-input"
-  }, text) : /*#__PURE__*/_react["default"].createElement(Markdown, {
-    text: text,
-    html: html,
-    plain: plain
+  }, text) : plain || !html ? /*#__PURE__*/_react["default"].createElement("div", {
+    className: "md-text plain"
+  }, thinking && "<think>\n".concat(thinking, "\n</think>"), text) : /*#__PURE__*/_react["default"].createElement("div", {
+    className: "md-text",
+    dangerouslySetInnerHTML: {
+      __html: html
+    }
   }) : /*#__PURE__*/_react["default"].createElement(_reactBootstrap.Spinner, {
     style: {
       margin: 10
@@ -536,19 +539,6 @@ function Msg(props) {
     size: "sm",
     animation: "border"
   })));
-}
-function Markdown(props) {
-  var text = props.text,
-    html = props.html,
-    plain = props.plain;
-  return plain || !html ? /*#__PURE__*/_react["default"].createElement("div", {
-    className: "md-text plain"
-  }, text) : /*#__PURE__*/_react["default"].createElement("div", {
-    className: "md-text",
-    dangerouslySetInnerHTML: {
-      __html: html
-    }
-  });
 }
 function InputArea(props) {
   var _store$inputValue$use = _store2.store.inputValue.use(),
@@ -1077,7 +1067,7 @@ function ask(question, answer) {
   }, 200);
   var patch = (0, _patch["default"])(getModelName());
   var update = (0, _index.throttle)(function (err, isEnd) {
-    ans.html = (0, _index.markdown)((ans.thinking ? "<think>".concat(ans.thinking, "</think>\n") : '') + ans.text);
+    ans.html = [ans.thinking && "<div class=\"think\">".concat((0, _index.markdown)(ans.thinking), "</div>"), ans.text && (0, _index.markdown)(ans.text)].filter(Boolean).join('');
     if (err || isEnd) {
       api.resetOllamaClient();
       ans.isPending = false;
@@ -1355,25 +1345,18 @@ function _callApi() {
   return _callApi.apply(this, arguments);
 }
 function markdown(str) {
-  var _marked = new marked.Marked(markedHighlight.markedHighlight({
-    emptyLangClass: 'hljs language-hljs-plaintext',
-    langPrefix: 'hljs language-',
-    highlight: function highlight(code, lang, info) {
-      var language = hljs.getLanguage(lang) ? lang : 'plaintext';
-      return hljs.highlight(code, {
-        language: language
-      }).value;
-    }
-  }));
+  var _marked = new marked.Marked();
   _marked.use({
     renderer: {
       html: function html(x) {
-        return x.raw.replace(/<br\s*>/g, '\n').replace(/<\/?think|</g, function (_) {
-          if (_ === '<') return '&lt;';else if (_ === '<think') return '<div class="think"';else if (_ === '</think') return '</div';
+        return x.raw.replace(/<br\s*>/g, '\n').replace(/<\/?|</g, function (_) {
+          if (_ === '<') return '&lt;';
         }).replace(/\n/g, '<br />');
       },
-      code: function code(e, lang) {
-        return "<pre><code class=\"hljs language-".concat(lang || 'markdown', "\">").concat(e.text.trim(), "</code></pre>");
+      code: function code(e) {
+        return "<pre><code class=\"hljs language-".concat(e.lang || 'markdown', "\">").concat(hljs.highlight(e.text.trim(), {
+          language: e.lang || 'plaintext'
+        }).value, "</code></pre>");
       }
     }
   });
