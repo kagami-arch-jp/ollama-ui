@@ -548,23 +548,21 @@ function Msg(props) {
         (text || thinking)? (
           isQuestion?
             <pre className='user-input'>{text}</pre>:
-            <Markdown text={text} html={html} plain={plain} />
+            (
+              plain || !html?
+                <div className='md-text plain'>
+                  {thinking && `<think>\n${thinking}\n</think>`}
+                  {text}
+                </div>:
+                <div className='md-text' dangerouslySetInnerHTML={{
+                  __html: html,
+                }} />
+            )
           ):
           <Spinner style={{margin: 10}} size='sm' animation="border" />
       }
     </div>
   </div>
-}
-
-function Markdown(props) {
-  const {text, html, plain}=props
-  return plain || !html?
-    <div className='md-text plain'>
-      {text}
-    </div>:
-    <div className='md-text' dangerouslySetInnerHTML={{
-      __html: html,
-    }} />
 }
 
 function InputArea(props) {
