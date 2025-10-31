@@ -57,26 +57,19 @@ export async function callApi(action, opt) {
 }
 
 export function markdown(str) {
-  const _marked=new marked.Marked(markedHighlight.markedHighlight({
-    emptyLangClass: 'hljs language-hljs-plaintext',
-    langPrefix: 'hljs language-',
-    highlight(code, lang, info) {
-      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-      return hljs.highlight(code, { language }).value;
-    },
-  }))
+  const _marked=new marked.Marked
   _marked.use({renderer: {
     html: x=>{
       return x.raw.replace(/<br\s*>/g, '\n')
-        .replace(/<\/?think|</g, _=>{
+        .replace(/<\/?|</g, _=>{
           if(_==='<') return '&lt;'
-          else if(_==='<think') return '<div class="think"'
-          else if(_==='</think') return '</div'
         })
         .replace(/\n/g, '<br />')
     },
-    code: (e, lang)=>{
-      return `<pre><code class="hljs language-${lang || 'markdown'}">${e.text.trim()}</code></pre>`
+    code: e=>{
+      return `<pre><code class="hljs language-${e.lang || 'markdown'}">${
+        hljs.highlight(e.text.trim(), { language: e.lang || 'plaintext' }).value
+      }</code></pre>`
     },
   }})
   return _marked.parse(str, {

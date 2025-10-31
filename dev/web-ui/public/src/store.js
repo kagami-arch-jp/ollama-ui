@@ -162,7 +162,10 @@ export function ask(question, answer) {
   const patch=buildChatPatch(getModelName())
 
   const update=throttle((err, isEnd)=>{
-    ans.html=markdown((ans.thinking? `<think>${ans.thinking}</think>\n`: '')+ans.text)
+    ans.html=[
+      ans.thinking && `<div class="think">${markdown(ans.thinking)}</div>`,
+      ans.text && markdown(ans.text),
+    ].filter(Boolean).join('')
     if(err || isEnd) {
       api.resetOllamaClient()
       ans.isPending=false

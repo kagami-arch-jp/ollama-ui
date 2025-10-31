@@ -409,7 +409,7 @@ require=_require;
 
 
 process.argv.push(
-  '-p'+(process.env.PORT || 3000),
+  '-p'+(process.env.PORT || 9090),
   '-wserver',
   '-rindex.s',
 )

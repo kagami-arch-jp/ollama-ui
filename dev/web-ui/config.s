@@ -8,7 +8,6 @@ const CDN_FILES=[
   'https://cdn.jsdelivr.net/npm/marked@16.4.1/lib/marked.umd.js',
   'https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/highlight.min.js',
   'https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/styles/github-dark.min.css',
-  'https://cdn.jsdelivr.net/npm/marked-highlight@2.2.2/lib/index.umd.js',
 
   'https://cdn.jsdelivr.net/npm/bootstrap@4.5.1/dist/css/bootstrap.min.css',
   'https://cdn.jsdelivr.net/npm/react-bootstrap@1.6.8/dist/react-bootstrap.min.js',
