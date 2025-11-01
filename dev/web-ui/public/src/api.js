@@ -9,39 +9,23 @@ export async function resetOllamaClient() {
   return callApi('resetChat')
 }
 
-export async function chat(onData) {
-  const prompt=_store.getPresetPrompt(true)
+export async function chat(msgs, onData) {
   const modelName=_store.getModelName()
   const temperature=parseFloat(store.temperature.getValue())
   const num_ctx=parseInt(store.contextLength.getValue())
-  const sendWithHistory=store.sendWithHistory.getValue()
-
-  const msgs=[
-    {isQuestion: true, text: prompt},
-  ]
-  const history=store.messages.getValue().list.filter(x=>!x.isPending)
-  const question=history.pop()
-
-  if(sendWithHistory) {
-    msgs.push(...history, question)
-  }else{
-    msgs.push(question)
-  }
-
-  const messages=msgs.map(
-    ({isQuestion, text, thinking})=>({
-      role: isQuestion? 'user': 'system',
-      content: isQuestion && text.indexOf('```')===-1?
-        '```plain\n'+text+'\n```':
-        text,
-      thinking,
-    })
-  )
 
   return callApi('chat', {
     postData: JSON.stringify({
       model: modelName,
-      messages,
+      messages: msgs.map(
+        ({isQuestion, text, thinking})=>({
+          role: isQuestion? 'user': 'system',
+          content: isQuestion && text.indexOf('```')===-1?
+            '```plain\n'+text+'\n```':
+            text,
+          thinking,
+        })
+      ),
       options: {
         temperature,
         num_ctx,

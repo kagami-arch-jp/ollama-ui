@@ -134,14 +134,15 @@ function newMsg(content) {
     isActive: false,
   }
 }
-export function ask(question, answer) {
 
+export function ask(question, answerIdx=-1) {
   const messages=store.messages.getValue()
   messages.isResponsing=true
 
-  const ans=answer || newMsg()
+  const isNewQuestion=answerIdx===-1
+  const ans=isNewQuestion? newMsg(): messages.list[answerIdx]
 
-  if(!answer) {
+  if(isNewQuestion) {
     const msg=newMsg(question)
     messages.list.push(msg, ans)
     setTimeout(_=>{
@@ -177,7 +178,21 @@ export function ask(question, answer) {
     })
   }, 200)
 
-  api.chat((e, isEnd, ret)=>{
+  const sendWithHistory=store.sendWithHistory.getValue()
+  const prompt=getPresetPrompt(true)
+  const msgs=[
+    {isQuestion: true, text: prompt},
+  ]
+  const history=messages.list.slice(0, isNewQuestion? messages.list.length-1: answerIdx)
+  const ques=history.pop()
+
+  if(sendWithHistory) {
+    msgs.push(...history, ques)
+  }else{
+    msgs.push(ques)
+  }
+
+  api.chat(msgs, (e, isEnd, ret)=>{
     if(patch.isEnd) return;
 
     const {content, thinking}=JSON.parse(ret || '{}')
@@ -199,6 +214,9 @@ export function ask(question, answer) {
 
     update(err, isEnd)
   })
+
+
+
 }
 
 export async function loadModels() {
@@ -315,6 +333,7 @@ export function deleteHistories() {
 export function reloadAnswer(i) {
   const messages=store.messages.getValue()
   messages.list[i]=newMsg()
-  ask(messages.list[i-1].text, messages.list[i])
+  ask(messages.list[i-1].text, i)
+  // ask(messages.list[i-1].text, messages.list[i])
   store.messages.setValue({...messages})
 }

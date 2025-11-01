@@ -376,14 +376,18 @@ function MsgBox(props) {
   const {list, isResponsing}=messages
   const boxRef=React.useRef(null)
 
+  function scroll() {
+    boxRef.current.scrollTo(0, 9e9)
+  }
+
   React.useEffect(_=>{
     if(list[list.length-1]?.isPending) {
-      boxRef.current.scrollTo(0, 9e9)
+      scroll()
     }
   }, [isResponsing, list[list.length-1]?.text, list[list.length-1]?.thinking])
 
   React.useEffect(_=>{
-    boxRef.current.scrollTo(0, 9e9)
+    scroll()
   }, [])
 
   const lastScrollp=React.useRef(0)
