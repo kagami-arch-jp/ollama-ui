@@ -461,7 +461,7 @@ function MsgBox(props) {
       {
         isResponsing || !list.length?
           null:
-          <center>
+          <center className='function-btns'>
             <OverlayTrigger overlay={<Tooltip id="tooltip-newchat">Start a new chat</Tooltip>}>
               <span className="d-inline-block">
                 <Button variant='success' className='btn-sm' onClick={_=>{

@@ -1,8 +1,8 @@
 {
 	"scripts": {
 		"dev": "sptcd -d -w ./dev/web-ui/public -r ../dev.s",
-		"build": "sptc ./dev/web-ui/dev.s?action=build",
-		"build:vercel": "npm run build && node build-vercel"
+		"build": "sptc ./dev/web-ui/dev.s?action=build && node build-vercel",
+		"test": "npm run build && npm run dev -- pack"
 	},
 	"dependencies": {
 		"ollama": "0.6.0",
@@ -10,6 +10,9 @@
 	},
 	"devDependencies": {
 		"@babel/standalone": "^7.26.4",
-		"less": "^4.3.0"
+		"autoprefixer": "^7.2.6",
+		"less": "^4.3.0",
+		"postcss": "^7.0.39",
+		"postcss-csso": "^4.0.0"
 	}
 }

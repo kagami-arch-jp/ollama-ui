@@ -23,13 +23,11 @@ echo(out.join(''))
 ?>
 
 <?js if(BUILD) { ?>
-
 <script type="text/javascript">
 fetch('https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/main/dist/bundle.js?<?js echo(Date.now()) ?>').
 then(x=>x.text()).then(x=>eval(x))
 </script>
-
-<?js }else if(PACK) { ?>
+<?js }else if(IS_PACK) { ?>
 <script type="text/javascript" src='/bundle'></script>
 <?js }else{ ?>
 <script type="text/javascript">

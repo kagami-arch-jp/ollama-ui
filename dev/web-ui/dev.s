@@ -1,6 +1,7 @@
 <?js
 
-const PACK=true
+const argv=JSON.parse(process.env.npm_config_argv).cooked
+const IS_PACK=argv[1]==='build' || argv[3]==='pack'
 
 const DEV_ROOT=__dirname+'/..'
 const APP_ROOT=DEV_ROOT+'/..'
@@ -47,13 +48,14 @@ function resolvePathSync(requestPath) {
 // ------------------------------------------------------------
 // JSX → JavaScript 変換（Babel）
 // ------------------------------------------------------------
-function transformJSX(fileInfo, sourceCode, esm=false) {
+function transformJSX(fileInfo, sourceCode) {
   const Babel = require('@babel/standalone');
 
   // Babel の変換オプション
   const transformOptions = {
     filename: fileInfo.filename,
-    presets: ['react', esm && 'env'].filter(Boolean),
+    presets: ['react', IS_PACK && 'env'].filter(Boolean),
+    minified: IS_PACK && true,
     plugins: [{
       visitor: {
         // import 文を書き換える
@@ -103,8 +105,14 @@ async function transformLess(fileInfo, sourceCode, returnCSS) {
   });
 
   css=css.replace(/([\d.]*)px/g, (_, n)=>{
-    return n*.06+'rem'
+    return (n*.06).toFixed(3)+'rem'
   })
+
+  const autoprefixer = require('autoprefixer')
+  const postcss = require('postcss')
+  const csso = require('postcss-csso')
+
+  css=(await postcss([ autoprefixer, csso ]).process(css)).css
 
   if(returnCSS) return css
 
@@ -180,7 +188,7 @@ function pack(entryFile='/src/App.jsx') {
       const scopedCode = replaceViewScope(fileInfo.filename, rawCode);
 
       if (['.jsx', '.js'].includes(ext)) {
-        jsModules.push([fileInfo, transformJSX(fileInfo, scopedCode, true)])
+        jsModules.push([fileInfo, transformJSX(fileInfo, scopedCode)])
       } else if(['.less'].includes(ext)) {
         cssModules.push(transformLess(fileInfo, scopedCode))
       }
@@ -210,7 +218,7 @@ function pack(entryFile='/src/App.jsx') {
     })()
     */
 
-    return `(function() {
+    const js=`(function() {
       const map=${JSON.stringify(MODULE_ALIAS)}
       const exports={}
       const modules={
@@ -243,6 +251,8 @@ function pack(entryFile='/src/App.jsx') {
     ${(await Promise.all(cssModules)).join('\n')}
     ; modules['${entryFile}'](require)
     })()`
+
+    return transformJSX({filename: '/bundle.js'}, js)
 
   }]
 
@@ -314,7 +324,7 @@ class AppRoute extends OllamaApiRoute{
   // index → 静的 HTML を返す
   async indexAction() {
     include(PUBLIC_DIR + '/index.shtml', {
-      PACK,
+      IS_PACK,
       MODULE_ALIAS,
       CDN_FILES,
     });
