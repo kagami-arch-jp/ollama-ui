@@ -15,6 +15,10 @@ export function formatTime() {
   return a.toLocaleString()
 }
 
+export function isLocalServer() {
+  return location.href.indexOf('127.0.0.1')>-1
+}
+
 export async function callApi(action, opt) {
   const {postData, onData}=opt || {}
   const {enable, value}=store.apiKey.getValue()

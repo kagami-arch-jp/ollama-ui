@@ -5,7 +5,7 @@ import './App.less'
 import {store} from './store'
 import * as _store from './store'
 import * as api from './api'
-import {cls} from '/utils'
+import {cls, isLocalServer} from '/utils'
 
 import {Modal, ButtonGroup, OverlayTrigger, Badge, Tooltip, Alert, Nav, Row, Col, Form, Button, InputGroup, FormControl, Tab, Accordion, Card, Spinner} from 'react-bootstrap'
 
@@ -100,19 +100,28 @@ function SettingPanel(props) {
   const [apiKey, set_apiKey]=store.apiKey.use()
   const ApiKey=<Form.Group>
     <div className='apikey-config'>
-      <Form.Check
-        className='checker'
-        type="switch"
-        id="apiKey-switch"
-        label="Use online api"
-        checked={apiKey.enable}
-        onChange={e=>{
-          set_apiKey({
-            ...apiKey,
-            enable: e.target.checked,
-          })
-        }}
-      />
+      {
+        isLocalServer()?
+          <Form.Check
+            className='checker'
+            type="switch"
+            id="apiKey-switch"
+            label="Use online api"
+            checked={apiKey.enable}
+            onChange={e=>{
+              set_apiKey({
+                ...apiKey,
+                enable: e.target.checked,
+              })
+            }}
+          />:
+          <>
+            Api key
+            <a target='_blank' href='https://ollama.com/settings/keys'>
+              <Badge className='apply-key' variant="primary">apply new key</Badge>
+            </a>
+          </>
+      }
     </div>
     <Form.Control
       value={apiKey.value}
@@ -600,6 +609,7 @@ function InputArea(props) {
       ref={target=>{
         inputRef.current=target
       }}
+      readOnly={model.isError}
       placeholder="Ask me anything.."
       as={multiLineInput? "textarea": "input"}
       className={active || inputValue? 'active': ''}

@@ -1,4 +1,4 @@
-import {callApi} from '/utils'
+import {callApi, isLocalServer} from '/utils'
 import {store} from '/store'
 import * as _store from '/store'
 
@@ -50,6 +50,9 @@ export function loadConfig() {
       multiLineInput,
 
     ]=JSON.parse(localStorage.getItem('ollama-webui-state-config'))
+
+    if(!isLocalServer()) apiKey.enable=true
+
     store.apiKey.setValue(apiKey)
     store.prompt.setValue(prompt)
     store.contextLength.setValue(contextLength)
