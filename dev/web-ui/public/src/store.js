@@ -1,6 +1,6 @@
 import React from 'react'
 import createSharedState from 'react-cross-component-state'
-import {newUUID, formatTime, markdown, throttle} from '/utils'
+import {newUUID, formatTime, markdown, throttle, isLocalServer} from '/utils'
 import buildChatPatch from '/utils/patch'
 import * as api from '/api'
 
@@ -8,7 +8,7 @@ export const store={
   activeTabIdx: createSharedState(0),
 
   apiKey: createSharedState(_=>({
-    enable: false,
+    enable: isLocalServer()? false: true,
     value: '',
   })),
   prompt: createSharedState(_=>({
