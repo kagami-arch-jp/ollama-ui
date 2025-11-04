@@ -67,20 +67,50 @@ function StatusBar(props) {
   </div>
 }
 
+function confirmModal(title) {
+  return new Promise(resolve=>{
+    store.dialogData.setValue({
+      show: true,
+      title,
+      onConfirm: resolve,
+    })
+  })
+}
 
 function Dialog() {
   const [dialogData, set_dialogData]=store.dialogData.use()
+  const {onConfirm, title, show, content}=dialogData
   function closeDialog() {
     set_dialogData({
       ...dialogData,
       show: false,
     })
+    onConfirm?.(false)
   }
-  return <Modal show={dialogData.show} onHide={closeDialog} size="lg" className='modal-textarea'>
+  return <Modal show={show} onHide={closeDialog} size={onConfirm? "sm": "lg"} className='modal-textarea'>
     <Modal.Header closeButton>
-      <Modal.Title>{dialogData.title}</Modal.Title>
+      <Modal.Title>{title}</Modal.Title>
     </Modal.Header>
-    <Modal.Body>{dialogData.content}</Modal.Body>
+    {
+      content? <Modal.Body>{content}</Modal.Body>: null
+    }
+    {
+      onConfirm?
+        <div className='modal-footer'>
+          <Button variant="primary" size="md" onClick={_=>{
+            onConfirm(true)
+            closeDialog()
+          }}>
+            OK
+          </Button>{' '}
+          <Button variant="secondary" size="md" onClick={_=>{
+            closeDialog()
+          }}>
+            Cancel
+          </Button>
+        </div>:
+        null
+    }
   </Modal>
 }
 
@@ -293,8 +323,8 @@ function SettingPanel(props) {
           }
         </Form.Control>
         <InputGroup.Prepend>
-          <Button variant="danger" onClick={_=>{
-            if(confirm('delete this prompt?')) {
+          <Button variant="danger" onClick={async _=>{
+            if(await confirmModal('delete this prompt?')) {
               customPrompt.list.splice(customPrompt.idx, 1)
               customPrompt.idx=customPrompt.list.length-1
               set_customPrompt({...customPrompt})
@@ -346,8 +376,10 @@ function SettingPanel(props) {
         _store.importSetting()
       }}>Import setting</Button>
       <OverlayTrigger overlay={<Tooltip id="tooltip-setting-btn">Load setting from github.</Tooltip>}>
-        <Button className='btn-sm' variant="danger" onClick={_=>{
-          _store.importDefaultSetting()
+        <Button className='btn-sm' variant="danger" onClick={async _=>{
+          if(await confirmModal('Override settings?')) {
+            _store.importDefaultSetting()
+          }
         }}>Import default setting</Button>
       </OverlayTrigger>
     </div>
@@ -375,16 +407,16 @@ function HistoryPanel(props) {
       history.length?
         <>
           <Alert className='clear-history' variant='danger'>
-            <Button variant="danger" className="btn-sm" onClick={_=>{
-              if(confirm('Delete all histories?')) {
+            <Button variant="danger" className="btn-sm" onClick={async _=>{
+              if(await confirmModal('Delete all histories?')) {
                 _store.deleteHistories()
               }
             }}>Delete all histories.</Button>
           </Alert>
           {history.map(h=>{
             return <div className='msgbox' key={h.messages[0].key}>
-              {h.messages.map((msg, i)=><Msg msg={msg} onDelete={_=>{
-                if(confirm('Delete this message?')) {
+              {h.messages.map((msg, i)=><Msg msg={msg} onDelete={async _=>{
+                if(await confirmModal('Delete this message?')) {
                   _store.deleteHistory(i, h)
                 }
               }} />)}
@@ -471,13 +503,13 @@ function MsgBox(props) {
         list.length?
           list.map((msg, i)=><Msg
             msg={msg}
-            onReload={_=>{
-              if(confirm('Reload answer?')) {
+            onReload={async _=>{
+              if(await confirmModal('Reload answer?')) {
                 _store.reloadAnswer(i)
               }
             }}
-            onDelete={_=>{
-              if(confirm('Delete this message?')) {
+            onDelete={async _=>{
+              if(await confirmModal('Delete this message?')) {
                 _store.deleteMessage(i)
               }
             }}
