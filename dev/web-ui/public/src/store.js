@@ -95,7 +95,7 @@ function loadSetting(text) {
 }
 
 export async function importDefaultSetting() {
-  const f=await fetch('https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/refs/heads/main/setting.txt')
+  const f=await fetch('https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/refs/heads/main/dist/setting.txt')
   loadSetting(await f.text())
 }
 
