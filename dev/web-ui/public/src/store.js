@@ -86,7 +86,6 @@ function loadSetting(text) {
     for(const k in s) {
       store[k]?.setValue(s[k])
     }
-    inp.remove();
     alert('import config successful!')
   }catch(e) {
     console.log(e)
@@ -109,6 +108,7 @@ export function importSetting() {
     if (file) {
       loadSetting(await file.text())
     }
+    inp.remove();
   })
   inp.click()
   document.body.appendChild(inp)
