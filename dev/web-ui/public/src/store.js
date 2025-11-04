@@ -49,6 +49,7 @@ export const store={
     content: null,
   }),
 
+  about: document.querySelector('[type="text/x-template"][id="site-about"]')?.innerHTML,
 }
 
 export async function initStore() {
@@ -64,15 +65,9 @@ export function getModelName() {
 }
 
 export function exportSetting() {
-  const apiKey=store.apiKey.getValue()
-  const prompt=store.prompt.getValue()
-  const contextLength=store.contextLength.getValue()
-  const temperature=store.temperature.getValue()
-  const model=store.model.getValue()
-  const customPrompt=store.customPrompt.getValue()
   const ret={
-    prompt,
-    customPrompt,
+    prompt: store.prompt.getValue(),
+    customPrompt: store.customPrompt.getValue(),
   }
 
   const _url=URL.createObjectURL(new Blob([encodeURIComponent(JSON.stringify(ret))], {type: 'text/plain'}))
@@ -85,6 +80,25 @@ export function exportSetting() {
   URL.revokeObjectURL(_url)
 }
 
+function loadSetting(text) {
+  try {
+    const s=JSON.parse(decodeURIComponent(text))
+    for(const k in s) {
+      store[k]?.setValue(s[k])
+    }
+    inp.remove();
+    alert('import config successful!')
+  }catch(e) {
+    console.log(e)
+    alert('failed to load config: \n'+e.message)
+  }
+}
+
+export async function importDefaultSetting() {
+  const f=await fetch('https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/refs/heads/main/setting.txt')
+  loadSetting(await f.text())
+}
+
 export function importSetting() {
   const inp=document.createElement('input')
   inp.type='file'
@@ -93,17 +107,7 @@ export function importSetting() {
   inp.addEventListener('change', async (event) => {
     const file = event.target.files[0];
     if (file) {
-      try {
-        const s=JSON.parse(decodeURIComponent(await file.text()))
-        for(const k in s) {
-          store[k]?.setValue(s[k])
-        }
-        inp.remove();
-        alert('import config successful!')
-      }catch(e) {
-        console.log(e)
-        alert('failed to load config: '+e.message)
-      }
+      loadSetting(await file.text())
     }
   })
   inp.click()
@@ -334,6 +338,5 @@ export function reloadAnswer(i) {
   const messages=store.messages.getValue()
   messages.list[i]=newMsg()
   ask(messages.list[i-1].text, i)
-  // ask(messages.list[i-1].text, messages.list[i])
   store.messages.setValue({...messages})
 }

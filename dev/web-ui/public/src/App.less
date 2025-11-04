@@ -14,6 +14,13 @@ html, body{
     top: 0;
     left: 0;
     right: 0;
+    .modal-body{
+      overflow: hidden;
+      .about-content{
+        overflow: auto;
+        height: 100%;
+      }
+    }
     .modal-content{
       height: 100%;
       textarea{
@@ -22,6 +29,90 @@ html, body{
     }
   }
 
+  .md-text{
+    &.plain{
+      white-space: break-spaces;
+    }
+    h1{
+      font-size: 32px;
+    }
+    h2{
+      font-size: 28px;
+    }
+    h3{
+      font-size: 24px;
+    }
+    h4{
+      font-size: 22px;
+    }
+    h5{
+      font-size: 20px;
+    }
+    h6{
+      font-size: 18px;
+    }
+    h1,h2,h3{
+      font-weight: 700;
+    }
+    h1,h2,h3,h4,h5,h6{
+      line-height: 1.8;
+      margin-bottom: 0;
+    }
+    table,th,td{
+      border: 1px solid #ccc;
+      border-collapse: collapse;
+    }
+    .think{
+      font-size: 12px;
+      line-height: 1.5;
+      color: #999;
+      font-style: italic;
+      margin: 5px;
+      &:before{
+        content: 'Thinking:'
+      }
+    }
+    table{
+      background: #ccc;
+      text-align: left;
+      border-spacing: 1px;
+      th{
+        padding: 5px;
+        background: #eee;
+      }
+      td{
+        padding: 5px;
+        background: #fff;
+      }
+    }
+    p{
+      margin: 2px 0;
+      white-space: break-spaces;
+    }
+    ul{
+      padding-left: 20px;
+    }
+    pre code{
+      background: #333;
+      color: #fff;
+      display: block;
+      padding: 5px 10px;
+      overflow: auto;
+      white-space: pre;
+      word-break: break-word;
+    }
+    code{
+      background: #333;
+      color: #ed2;
+      white-space: break-spaces;
+      word-break: break-word;
+      padding: 4px;
+      border-radius: 4px;
+    }
+    .language-markdown, .language-hljs-plaintext{
+      white-space: break-spaces;
+    }
+  }
 
   #app{
     width: 100%;
@@ -42,25 +133,40 @@ html, body{
       }
     }
 
-    .statusbar{
-      margin: 5px 10px;
-      position: sticky;
-      top: 0;
-      background: #fff;
-      z-index: 99;
-      box-shadow: 0 0 20px #eee;
-      .nav-link{
-        display: flex;
-        align-items: center;
-        .bi{
-          font-size: 12px;
-          margin-right: 4px;
-        }
-        .history-count{
-          margin-left: 5px;
+    .statusbar-box{
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      padding: 0 10px;
+      .statusbar{
+        width: 100%;
+        margin: 5px 0;
+        background: #fff;
+        z-index: 99;
+        box-shadow: 0 0 20px #eee;
+        .nav-link{
+          display: flex;
+          align-items: center;
+          .bi{
+            font-size: 12px;
+            margin-right: 4px;
+          }
+          .history-count{
+            margin-left: 5px;
+          }
         }
       }
+      .about-btn{
+        align-self: center;
+        font-size: 18px;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        margin-left: 10px;
+      }
     }
+
     .main-content-bs{
       margin: 5px 10px;
       &.setting-form{
@@ -316,90 +422,6 @@ html, body{
         }
       }
 
-      .md-text{
-        &.plain{
-          white-space: break-spaces;
-        }
-        h1{
-          font-size: 32px;
-        }
-        h2{
-          font-size: 28px;
-        }
-        h3{
-          font-size: 24px;
-        }
-        h4{
-          font-size: 22px;
-        }
-        h5{
-          font-size: 20px;
-        }
-        h6{
-          font-size: 18px;
-        }
-        h1,h2,h3{
-          font-weight: 700;
-        }
-        h1,h2,h3,h4,h5,h6{
-          line-height: 1.8;
-          margin-bottom: 0;
-        }
-        table,th,td{
-          border: 1px solid #ccc;
-          border-collapse: collapse;
-        }
-        .think{
-          font-size: 12px;
-          line-height: 1.5;
-          color: #999;
-          font-style: italic;
-          margin: 5px;
-          &:before{
-            content: 'Thinking:'
-          }
-        }
-        table{
-          background: #ccc;
-          text-align: left;
-          border-spacing: 1px;
-          th{
-            padding: 5px;
-            background: #eee;
-          }
-          td{
-            padding: 5px;
-            background: #fff;
-          }
-        }
-        p{
-          margin: 2px 0;
-          white-space: break-spaces;
-        }
-        ul{
-          padding-left: 20px;
-        }
-        pre code{
-          background: #333;
-          color: #fff;
-          display: block;
-          padding: 5px 10px;
-          overflow: auto;
-          white-space: pre;
-          word-break: break-word;
-        }
-        code{
-          background: #333;
-          color: #ed2;
-          white-space: break-spaces;
-          word-break: break-word;
-          padding: 4px;
-          border-radius: 4px;
-        }
-        .language-markdown, .language-hljs-plaintext{
-          white-space: break-spaces;
-        }
-      }
     }
     .history-panel{
       height: 100%;

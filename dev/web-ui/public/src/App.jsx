@@ -5,7 +5,7 @@ import './App.less'
 import {store} from './store'
 import * as _store from './store'
 import * as api from './api'
-import {cls, isLocalServer} from '/utils'
+import {cls, isLocalServer, markdown} from '/utils'
 
 import {Modal, ButtonGroup, OverlayTrigger, Badge, Tooltip, Alert, Nav, Row, Col, Form, Button, InputGroup, FormControl, Tab, Accordion, Card, Spinner} from 'react-bootstrap'
 
@@ -31,28 +31,40 @@ function App(props) {
 function StatusBar(props) {
   const [activeTabIdx, set_activeTabIdx]=store.activeTabIdx.use()
   const historyCount=_store.useHistoryCount()
-  return <Nav
-    className='statusbar'
-    variant="tabs"
-    defaultActiveKey={activeTabIdx}
-  >
+  const {about}=store
+  return <div className='statusbar-box'>
+    <Nav
+      className='statusbar'
+      variant="tabs"
+      defaultActiveKey={activeTabIdx}
+    >
+      {
+        [
+          <><i class="bi bi-person-workspace"></i>Chat</>,
+          <><i class="bi bi-gear-fill"></i>Setting</>,
+          <>
+            <i class="bi bi-clipboard2-fill"></i>History
+            {
+              historyCount>0 && <Badge variant="info" className='history-count'>{historyCount}</Badge>
+            }
+          </>,
+        ].map((txt, idx)=><Nav.Item key={idx} onClick={_=>{
+          set_activeTabIdx(idx)
+        }}>
+          <Nav.Link eventKey={idx}>{txt}</Nav.Link>
+        </Nav.Item>)
+      }
+    </Nav>
     {
-      [
-        <><i class="bi bi-person-workspace"></i>Chat</>,
-        <><i class="bi bi-gear-fill"></i>Setting</>,
-        <>
-          <i class="bi bi-clipboard2-fill"></i>History
-          {
-            historyCount>0 && <Badge variant="info" className='history-count'>{historyCount}</Badge>
-          }
-        </>,
-      ].map((txt, idx)=><Nav.Item key={idx} onClick={_=>{
-        set_activeTabIdx(idx)
-      }}>
-        <Nav.Link eventKey={idx}>{txt}</Nav.Link>
-      </Nav.Item>)
+      about && <i onClick={_=>{
+        store.dialogData.setValue({
+          show: true,
+          title: 'About',
+          content: <div className='about-content md-text' dangerouslySetInnerHTML={{__html: markdown(about)}} />,
+        })
+      }} className="about-btn btn btn-sm btn-secondary bi bi-question-lg" />
     }
-  </Nav>
+  </div>
 }
 
 
@@ -333,6 +345,11 @@ function SettingPanel(props) {
       <Button className='btn-sm' variant="info" onClick={_=>{
         _store.importSetting()
       }}>Import setting</Button>
+      <OverlayTrigger overlay={<Tooltip id="tooltip-setting-btn">Load setting from github.</Tooltip>}>
+        <Button className='btn-sm' variant="danger" onClick={_=>{
+          _store.importDefaultSetting()
+        }}>Import default setting</Button>
+      </OverlayTrigger>
     </div>
   </Form>
 }

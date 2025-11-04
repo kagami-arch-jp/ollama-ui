@@ -22,6 +22,8 @@ echo(out.join(''))
 
 ?>
 
+<script type="text/x-template" id='site-about'><?js echo(ABOUT_MD || '') ?></script>
+
 <?js if(BUILD) { ?>
 <script type="text/javascript">
 fetch('https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/main/dist/bundle.js?<?js echo(Date.now()) ?>').

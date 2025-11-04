@@ -20,3 +20,6 @@ const MODULE_ALIAS={
   'react-cross-component-state': 'createSharedState',
   'react-bootstrap': 'ReactBootstrap',
 }
+
+const fs=require('fs')
+const ABOUT_MD=fs.readFileSync(__dirname+'/about.md', 'utf8')

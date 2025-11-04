@@ -15,7 +15,7 @@ const {App: OllamaApiRoute}=include(SERVER_ROOT+'/ollama.s')
 const PUBLIC_DIR = __dirname + '/public';
 const SRC_DIR = PUBLIC_DIR + '/src';
 
-const {MODULE_ALIAS, CDN_FILES}=include(__dirname+'/config.s')
+const {MODULE_ALIAS, CDN_FILES, ABOUT_MD}=include(__dirname+'/config.s')
 
 // 拡張子探索リスト（名前は変更不可）
 const resolvePathSyncExts = ['/index.jsx', '/index.js', '.jsx', '.js', ''];
@@ -327,6 +327,7 @@ class AppRoute extends OllamaApiRoute{
       IS_PACK,
       MODULE_ALIAS,
       CDN_FILES,
+      ABOUT_MD,
     });
   }
 
@@ -337,6 +338,7 @@ class AppRoute extends OllamaApiRoute{
       BUILD: true,
       MODULE_ALIAS,
       CDN_FILES,
+      ABOUT_MD,
     });
     const outHTML=readEchoed()
     const [files, bundleFunc]=pack()
