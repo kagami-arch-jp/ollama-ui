@@ -648,7 +648,7 @@ function InputArea(props) {
   React.useEffect(_=>{
     if(messages.isResponsing) return;
     api.saveMessages()
-    if(wideScreen || !showAsMultiLine) inputRef.current.focus()
+    if(!showAsMultiLine) inputRef.current.focus()
   }, [messages.isResponsing])
 
   function send() {
