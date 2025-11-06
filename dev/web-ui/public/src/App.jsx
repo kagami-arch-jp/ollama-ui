@@ -648,7 +648,7 @@ function InputArea(props) {
   React.useEffect(_=>{
     if(messages.isResponsing) return;
     api.saveMessages()
-    if(!showAsMultiLine) inputRef.current.focus()
+    if(wideScreen || !showAsMultiLine) inputRef.current.focus()
   }, [messages.isResponsing])
 
   function send() {
@@ -669,6 +669,9 @@ function InputArea(props) {
       as={showAsMultiLine? "textarea": "input"}
       className={active || inputValue? 'active': ''}
       value={inputValue}
+      onMouseMove={e=>{
+        if(wideScreen) inputRef.current.focus()
+      }}
       onChange={e=>{
         set_inputValue(e.target.value)
       }}
