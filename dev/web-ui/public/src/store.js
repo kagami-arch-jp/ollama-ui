@@ -345,10 +345,11 @@ export function reloadAnswer(i) {
 
 export function useWideScreenChange() {
   React.useEffect(_=>{
-    let _width=innerWidth
+    let _width=innerWidth, _height=innerHeight
     const fn=_=>{
-      if(innerWidth===_width) return;
+      if(innerHeight<_height && innerWidth===_width) return;
       _width=innerWidth
+      _height=innerHeight
       store.wideScreen.setValue(isWideScreen())
     }
     window.addEventListener('resize', fn)

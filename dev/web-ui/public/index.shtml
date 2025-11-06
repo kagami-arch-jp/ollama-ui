@@ -26,8 +26,22 @@ echo(out.join(''))
 
 <?js if(BUILD) { ?>
 <script type="text/javascript">
-fetch('https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/main/dist/bundle.js?<?js echo(Date.now()) ?>').
-then(x=>x.text()).then(x=>eval(x))
+<?js echo(toES5(`
+const version='${Date.now()}';
+function loadJS(cb) {
+  fetch('https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/main/dist/bundle.js?'+version).
+    then(x=>x.text()).then(cb)
+}
+if(localStorage.BUNDLE_JS_VERSION!==version) {
+  loadJS(code=>{
+    localStorage.BUNDLE_JS=code
+    eval(code)
+    localStorage.BUNDLE_JS_VERSION=version
+  })
+}else{
+  eval(localStorage.BUNDLE_JS)
+}
+`)) ?>
 </script>
 <?js }else if(IS_PACK) { ?>
 <script type="text/javascript" src='/bundle'></script>

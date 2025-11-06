@@ -49,6 +49,7 @@ function resolvePathSync(requestPath) {
 // JSX → JavaScript 変換（Babel）
 // ------------------------------------------------------------
 function transformJSX(fileInfo, sourceCode) {
+  if(typeof fileInfo==='string') fileInfo={filename: fileInfo}
   const Babel = require('@babel/standalone');
 
   // Babel の変換オプション
@@ -252,7 +253,7 @@ function pack(entryFile='/src/App.jsx') {
     ; modules['${entryFile}'](require)
     })()`
 
-    return transformJSX({filename: '/bundle.js'}, js)
+    return transformJSX('/bundle.js', js)
 
   }]
 
@@ -339,6 +340,7 @@ class AppRoute extends OllamaApiRoute{
       MODULE_ALIAS,
       CDN_FILES,
       ABOUT_MD,
+      toES5: code=>transformJSX('/index.js', code),
     });
     const outHTML=readEchoed()
     const [files, bundleFunc]=pack()
