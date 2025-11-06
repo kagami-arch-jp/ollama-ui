@@ -504,7 +504,8 @@ function MsgBox(props) {
     }}>
       {
         list.length?
-          list.map((msg, i)=><Msg
+          <>
+          {list.map((msg, i)=><Msg
             msg={msg}
             onReload={async _=>{
               if(await confirmModal('Reload answer?')) {
@@ -516,16 +517,13 @@ function MsgBox(props) {
                 _store.deleteMessage(i)
               }
             }}
-          />):
-          <EmptyMessage />
-      }
-      {
-        isResponsing || !list.length?
-          null:
+          />)}
           <center className='function-btns'>
             <OverlayTrigger overlay={<Tooltip id="tooltip-newchat">Start a new chat</Tooltip>}>
               <span className="d-inline-block">
-                <Button variant='success' className='btn-sm' onClick={_=>{
+                <Button variant='success' disabled={
+                  isResponsing || !list.length
+                } className='btn-sm' onClick={_=>{
                   _store.newChat()
                 }}>
                   <i className="new-ico bi bi-arrow-return-left"></i>
@@ -534,6 +532,8 @@ function MsgBox(props) {
               </span>
             </OverlayTrigger>
           </center>
+          </>:
+          <EmptyMessage />
       }
     </div>
   </div>
