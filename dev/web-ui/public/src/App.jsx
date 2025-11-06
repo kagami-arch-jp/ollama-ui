@@ -15,6 +15,8 @@ function App(props) {
 
   _store.useAutoSave()
 
+  _store.useWideScreenChange()
+
   return <>
     <StatusBar />
     {
@@ -394,7 +396,8 @@ function EmptyMessage(props) {
 }
 
 function ChatPanel(props) {
-  return <div className='chat-panel'>
+  const {wideScreen}=store
+  return <div className={cls('chat-panel', wideScreen.useValue() && 'wide-screen')}>
     <MsgBox />
     <InputArea />
   </div>
@@ -435,7 +438,7 @@ function MsgBox(props) {
   const boxRef=React.useRef(null)
 
   function scroll() {
-    boxRef.current.scrollTo(0, 9e9)
+    boxRef.current.parentNode.scrollTo(0, 9e9)
   }
 
   React.useEffect(_=>{
@@ -450,7 +453,7 @@ function MsgBox(props) {
 
   const lastScrollp=React.useRef(0)
   const [customPrompt, set_customPrompt]=store.customPrompt.use()
-  return <>
+  return <div className='chat-messages'>
     {
       systemPrompt && <Accordion className='preset-card'>
         <Card>
@@ -533,7 +536,7 @@ function MsgBox(props) {
           </center>
       }
     </div>
-  </>
+  </div>
 
 }
 
@@ -631,6 +634,7 @@ function InputArea(props) {
   const [inputValue, set_inputValue]=store.inputValue.use()
   const [active, set_active]=React.useState(false)
   const messages=store.messages.useValue()
+  const wideScreen=store.wideScreen.useValue()
   const inputRef=React.useRef(null)
 
   const model=store.model.useValue()
@@ -639,10 +643,12 @@ function InputArea(props) {
   const [enterSend, set_enterSend]=store.enterSend.use()
   const [multiLineInput, set_multiLineInput]=store.multiLineInput.use()
 
+  const showAsMultiLine=wideScreen || multiLineInput
+
   React.useEffect(_=>{
     if(messages.isResponsing) return;
     api.saveMessages()
-    if(!multiLineInput) inputRef.current.focus()
+    if(!showAsMultiLine) inputRef.current.focus()
   }, [messages.isResponsing])
 
   function send() {
@@ -660,7 +666,7 @@ function InputArea(props) {
       }}
       readOnly={model.isError}
       placeholder="Ask me anything.."
-      as={multiLineInput? "textarea": "input"}
+      as={showAsMultiLine? "textarea": "input"}
       className={active || inputValue? 'active': ''}
       value={inputValue}
       onChange={e=>{
@@ -720,20 +726,24 @@ function InputArea(props) {
           <i className={cls('bi', enterSend? 'bi-sign-turn-right': 'bi-sign-no-right-turn-fill')}></i>
         </Button>
       </OverlayTrigger>
-      <OverlayTrigger
-        placement='top'
-        overlay={
-          <Tooltip>
-            {multiLineInput? 'Multiline inputbox.': 'Singleline inputbox.'}
-          </Tooltip>
-        }
-      >
-        <Button variant={multiLineInput? "info": "secondary"} onClick={_=>{
-          set_multiLineInput(!multiLineInput)
-        }}>
-          <i className={cls('bi', multiLineInput? 'bi-list': 'bi-dash')}></i>
-        </Button>
-      </OverlayTrigger>
+      {
+        wideScreen?
+          null:
+          <OverlayTrigger
+            placement='top'
+            overlay={
+              <Tooltip>
+                {multiLineInput? 'Multiline inputbox.': 'Singleline inputbox.'}
+              </Tooltip>
+            }
+          >
+            <Button variant={multiLineInput? "info": "secondary"} onClick={_=>{
+              set_multiLineInput(!multiLineInput)
+            }}>
+              <i className={cls('bi', multiLineInput? 'bi-list': 'bi-dash')}></i>
+            </Button>
+          </OverlayTrigger>
+      }
     </InputGroup.Append>
     {(_=>{
       if(model.isError) {

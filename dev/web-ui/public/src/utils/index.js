@@ -15,6 +15,10 @@ export function formatTime() {
   return a.toLocaleString()
 }
 
+export function isWideScreen() {
+  return innerWidth>innerHeight*1.1
+}
+
 export function isLocalServer() {
   return location.href.indexOf('127.0.0.1')>-1
 }

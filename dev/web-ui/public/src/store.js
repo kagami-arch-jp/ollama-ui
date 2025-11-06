@@ -1,6 +1,6 @@
 import React from 'react'
 import createSharedState from 'react-cross-component-state'
-import {newUUID, formatTime, markdown, throttle, isLocalServer} from '/utils'
+import {newUUID, formatTime, markdown, throttle, isLocalServer, isWideScreen} from '/utils'
 import buildChatPatch from '/utils/patch'
 import * as api from '/api'
 
@@ -48,6 +48,8 @@ export const store={
     title: null,
     content: null,
   }),
+
+  wideScreen: createSharedState(isWideScreen()),
 
   about: document.querySelector('[type="text/x-template"][id="site-about"]')?.innerHTML,
 }
@@ -339,4 +341,17 @@ export function reloadAnswer(i) {
   messages.list[i]=newMsg()
   ask(messages.list[i-1].text, i)
   store.messages.setValue({...messages})
+}
+
+export function useWideScreenChange() {
+  React.useEffect(_=>{
+    let _width=innerWidth
+    const fn=_=>{
+      if(innerWidth===_width) return;
+      _width=innerWidth
+      store.wideScreen.setValue(isWideScreen())
+    }
+    window.addEventListener('resize', fn)
+    return _=>window.removeEventListener('resize', fn)
+  }, [])
 }
