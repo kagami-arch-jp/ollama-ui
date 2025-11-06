@@ -693,7 +693,7 @@ function InputArea(props) {
         if(!multiLineInput) inputRef.current.focus()
       }}
     />
-    <InputGroup.Append>
+    <ButtonGroup>
       <Button variant="success" onClick={send}>Send</Button>
       <OverlayTrigger
         placement='top'
@@ -747,7 +747,7 @@ function InputArea(props) {
             </Button>
           </OverlayTrigger>
       }
-    </InputGroup.Append>
+    </ButtonGroup>
     {(_=>{
       if(model.isError) {
         return <div className='stop-btn'>
