@@ -312,10 +312,7 @@ function SettingPanel(props) {
           custom
           value={customPrompt.idx}
           onChange={e=>{
-            customPrompt.idx=e.target.value
-            set_customPrompt({
-              ...customPrompt
-            })
+            _store.selectPrompt(e.target.value)
           }}
         >
           {
@@ -470,16 +467,7 @@ function MsgBox(props) {
               className='btn'
               value={customPrompt.enable? customPrompt.idx: -1}
               onChange={e=>{
-                const idx=e.target.value
-                if(idx<0) {
-                  customPrompt.enable=false
-                }else{
-                  customPrompt.idx=idx
-                  customPrompt.enable=true
-                }
-                set_customPrompt({
-                  ...customPrompt
-                })
+                _store.selectPrompt(e.target.value)
               }}
             >
               <option value={-1}>- Disabled -</option>
@@ -750,12 +738,17 @@ function InputArea(props) {
     </ButtonGroup>
     {(_=>{
       if(model.isError) {
-        return <div className='stop-btn'>
+        return <div className='stop-btn' onClick={_=>{
+          if(!isLocalServer()) {
+            store.activeTabIdx.setValue(1)
+          }
+        }}>
           <Button variant="warning" onClick={_=>{
             _store.loadModels()
           }}>
             <i class="icon bi bi-emoji-dizzy-fill"></i>
             No available model.
+            {isLocalServer()? null: <div>Go to [Setting], and apply an api key.</div>}
           </Button>
         </div>
       }

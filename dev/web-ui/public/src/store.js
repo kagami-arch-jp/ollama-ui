@@ -356,3 +356,16 @@ export function useWideScreenChange() {
     return _=>window.removeEventListener('resize', fn)
   }, [])
 }
+
+export function selectPrompt(idx) {
+  const {customPrompt}=store
+  const val=customPrompt.getValue()
+  if(idx<0) {
+    val.enable=false
+  }else{
+    val.idx=0
+    val.list.unshift(val.list.splice(idx, 1)[0])
+    val.enable=true
+  }
+  customPrompt.setValue({...val})
+}
