@@ -252,8 +252,12 @@ html, body{
         display: flex;
         flex-direction: row;
         padding-bottom: 10px;
+        .chat-messages{
+          margin-top: 5px;
+        }
         .input-area{
           align-items: flex-start;
+          padding-top: 5px;
           padding-left: 0;
           padding-bottom: 0;
           height: 100%;
@@ -279,6 +283,7 @@ html, body{
       .input-area{
         align-items: flex-end;
         padding: 10px;
+        padding-top: 0;
         .stop-btn{
           position: absolute;
           left: 0;
@@ -348,7 +353,6 @@ html, body{
       scroll-behavior: smooth;
       height: 100%;
       overflow: auto;
-      padding-bottom: 20px;
       .tool-btns{
         display: flex;
         white-space: nowrap;
