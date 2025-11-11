@@ -11,6 +11,14 @@ class App{
         expires: 0,
       });
       sendFile(__dirname+'/../dist/index.html');
+    }else if($_PATHNAME==='/sw.js') {
+      setResponseHeaders({
+        'content-type': 'text/html; charset=utf8',
+        'cache-Control': 'no-cache, no-store, must-revalidate',
+        pragma: 'no-cache',
+        expires: 0,
+      });
+      sendFile(__dirname+'/../dist/sw.js');
     }else{
       const actionName=this.getActionName()
 

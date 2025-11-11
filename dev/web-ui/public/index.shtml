@@ -7,7 +7,7 @@
 <script type="text/javascript">
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/main/dist/sw.js')
+    navigator.serviceWorker.register('/sw.js')
       .then(reg => {
         console.log('ServiceWorker registered with scope:', reg.scope);
       })
