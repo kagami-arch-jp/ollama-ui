@@ -290,7 +290,18 @@ class AppRoute extends OllamaApiRoute{
   }
 
   static getActionName() {
+    if($_PATHNAME==='/sw.js') return 'serviceWorkerAction'
     return ($_QUERY.action || $_PATHNAME.substr(1) || 'index') + 'Action';
+  }
+
+  serviceWorkerAction() {
+    setResponseHeaders({
+      'content-type': 'text/javascript; charset=utf8',
+      'cache-Control': 'no-cache, no-store, must-revalidate',
+      pragma: 'no-cache',
+      expires: 0,
+    });
+    include(PUBLIC_DIR+'/sw.js.s', {CDN_FILES})
   }
 
   // エントリポイント
@@ -333,20 +344,29 @@ class AppRoute extends OllamaApiRoute{
   }
 
   async buildAction() {
+    const fs=require('fs')
+    const DIST_DIR=APP_ROOT+'/dist'
+
+    const toES5=code=>transformJSX('/index.js', code)
+
     console.log('pack files..')
     readEchoed()
+
+    include(PUBLIC_DIR+'/sw.js.s', {CDN_FILES})
+    const sw=readEchoed()
+    fs.writeFileSync(DIST_DIR+'/sw.js', toES5(sw))
+
     include(PUBLIC_DIR + '/index.shtml', {
       BUILD: true,
       MODULE_ALIAS,
       CDN_FILES,
       ABOUT_MD,
-      toES5: code=>transformJSX('/index.js', code),
+      toES5,
     });
     const outHTML=readEchoed()
+
     const [files, bundleFunc]=pack()
     const jsCode=await bundleFunc()
-    const fs=require('fs')
-    const DIST_DIR=APP_ROOT+'/dist'
     try{
       fs.mkdirSync(DIST_DIR)
     }catch(e) {}
