@@ -4,6 +4,7 @@ require('./server/index.s');
 require('./server/ollama.s');
 require('./dist/bundle.js');
 require('./dist/index.html');
+require('./dist/sw.js');
 require('./node_modules/ansi-styles/index.js');
 require('./node_modules/ansi-styles/package.json');
 require('./node_modules/autoprefixer/package.json');

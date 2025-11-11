@@ -4,6 +4,20 @@
 <link rel="shortcut icon" href="" type="image/x-icon" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes,maximum-scale=10.0,viewport-fit=cover,interactive-widget=resizes-content" />
 
+<script type="text/javascript">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/main/dist/sw.js')
+      .then(reg => {
+        console.log('ServiceWorker registered with scope:', reg.scope);
+      })
+      .catch(err => {
+        console.error('ServiceWorker registration failed:', err);
+      });
+  });
+}
+</script>
+
 <body>
   <div id='app'></div>
 </body>

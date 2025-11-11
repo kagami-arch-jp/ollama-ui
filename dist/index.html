@@ -4,6 +4,20 @@
 <link rel="shortcut icon" href="" type="image/x-icon" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes,maximum-scale=10.0,viewport-fit=cover,interactive-widget=resizes-content" />
 
+<script type="text/javascript">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/main/dist/sw.js')
+      .then(reg => {
+        console.log('ServiceWorker registered with scope:', reg.scope);
+      })
+      .catch(err => {
+        console.error('ServiceWorker registration failed:', err);
+      });
+  });
+}
+</script>
+
 <body>
   <div id='app'></div>
 </body>
@@ -33,6 +47,6 @@ For detailed setup, configuration, and advanced usage, please refer to the offic
 
 
 <script type="text/javascript">
-"use strict";var version="1762669981482";function loadJS(cb){fetch("https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/main/dist/bundle.js?"+version).then(function(x){return x.text()}).then(cb)}if(localStorage.BUNDLE_JS_VERSION!==version){loadJS(function(code){localStorage.BUNDLE_JS=code;eval(code);localStorage.BUNDLE_JS_VERSION=version})}else{eval(localStorage.BUNDLE_JS)}
+"use strict";var version="1762842020247";function loadJS(cb){fetch("https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/main/dist/bundle.js?"+version).then(function(x){return x.text()}).then(cb)}if(localStorage.BUNDLE_JS_VERSION!==version){loadJS(function(code){localStorage.BUNDLE_JS=code;eval(code);localStorage.BUNDLE_JS_VERSION=version})}else{eval(localStorage.BUNDLE_JS)}
 </script>
 

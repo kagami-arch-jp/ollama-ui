@@ -435,7 +435,7 @@ function MsgBox(props) {
   const boxRef=React.useRef(null)
 
   function scroll() {
-    boxRef.current.parentNode.scrollTo(0, 9e9)
+    boxRef.current.scrollTo(0, 9e9)
   }
 
   React.useEffect(_=>{
