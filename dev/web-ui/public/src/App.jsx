@@ -62,6 +62,7 @@ function StatusBar(props) {
         store.dialogData.setValue({
           show: true,
           title: 'About',
+          large: true,
           content: <div className='about-content md-text' dangerouslySetInnerHTML={{__html: markdown(about)}} />,
         })
       }} className="about-btn btn btn-sm btn-secondary bi bi-question-lg" />
@@ -75,13 +76,14 @@ function confirmModal(title) {
       show: true,
       title,
       onConfirm: resolve,
+      cancelButton: true,
     })
   })
 }
 
 function Dialog() {
   const [dialogData, set_dialogData]=store.dialogData.use()
-  const {onConfirm, title, show, content}=dialogData
+  const {onConfirm, title, show, content, cancelButton, large}=dialogData
   function closeDialog() {
     set_dialogData({
       ...dialogData,
@@ -89,9 +91,9 @@ function Dialog() {
     })
     onConfirm?.(false)
   }
-  return <Modal show={show} onHide={closeDialog} size={onConfirm? "sm": "lg"} className='modal-textarea'>
+  return <Modal show={show} onHide={closeDialog} size={large? "lg": "md"} className='modal-textarea'>
     <Modal.Header closeButton>
-      <Modal.Title>{title}</Modal.Title>
+      {title && <Modal.Title>{title}</Modal.Title>}
     </Modal.Header>
     {
       content? <Modal.Body>{content}</Modal.Body>: null
@@ -105,11 +107,15 @@ function Dialog() {
           }}>
             OK
           </Button>{' '}
-          <Button variant="secondary" size="md" onClick={_=>{
-            closeDialog()
-          }}>
-            Cancel
-          </Button>
+          {
+            cancelButton?
+              <Button variant="secondary" size="md" onClick={_=>{
+                closeDialog()
+              }}>
+                Cancel
+              </Button>:
+              null
+          }
         </div>:
         null
     }
@@ -135,6 +141,7 @@ function Summary({placeHolder, title, value, onChange}) {
     store.dialogData.setValue({
       show: true,
       title,
+      large: true,
       content: <Textarea value={value} onChange={onChange} />,
     })
   }}>{value}</div>

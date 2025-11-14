@@ -88,11 +88,28 @@ function loadSetting(text) {
     for(const k in s) {
       store[k]?.setValue(s[k])
     }
-    alert('import config successful!')
+    throw new Error
+    alertModal('Import config successful!')
   }catch(e) {
     console.log(e)
-    alert('failed to load config: \n'+e.message)
+    alertModal(<>
+      <div>Failed to load config:</div>
+      <pre>{e.stack}</pre>
+    </>)
   }
+}
+
+function alertModal(msg) {
+  return new Promise(resolve=>{
+    store.dialogData.setValue({
+      show: true,
+      title: 'ollama-ui',
+      content: <div className='alert-model-content'>{msg}</div>,
+      onConfirm: resolve,
+      // large: true,
+      cancelButton: false,
+    })
+  })
 }
 
 export async function importDefaultSetting() {

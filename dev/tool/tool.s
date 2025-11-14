@@ -69,6 +69,7 @@ async function getLLMLog(query) {
           6. Please only count the code changes for this commit.
           Lines starting with \`-\` indicate that this code was deleted in this commit.
           Lines starting with \`+\` indicate that this code was added in this commit.
+          7. For style changes, please summarize which components were modified, rather than detailing each change.
 
           The following is the code changes counted using the \`git diff --cached\` command:
           `.split('\n').map(x=>x.trim()).join('\n')+
