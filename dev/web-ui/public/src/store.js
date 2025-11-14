@@ -88,7 +88,6 @@ function loadSetting(text) {
     for(const k in s) {
       store[k]?.setValue(s[k])
     }
-    throw new Error
     alertModal('Import config successful!')
   }catch(e) {
     console.log(e)
