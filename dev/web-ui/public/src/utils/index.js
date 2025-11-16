@@ -68,7 +68,7 @@ export function markdown(str) {
   const _marked=new marked.Marked
   _marked.use({renderer: {
     html: x=>{
-      return x.raw.replace(/<br\s*>/g, '\n')
+      return x.raw.replace(/<br\s*\/?>/g, '\n')
         .replace(/<\/?|</g, _=>{
           if(_==='<') return '&lt;'
         })
@@ -81,15 +81,13 @@ export function markdown(str) {
     },
   }})
   // fix marked parse bug
-  str=str.replace(/(\*\*[^*]+\*\*)([\S])/g, `$1 $2`)
+  str=str.replace(/(\*\*.+?\*\*)([\S])/g, `$1 $2`)
   return _marked.parse(str, {
     mangle: false,
     headerIds: false,
     silent: true,
   })
 }
-
-window.M=markdown
 
 export async function loadScript(src, isModule, jscode) {
   return new Promise((resolve, reject)=>{
