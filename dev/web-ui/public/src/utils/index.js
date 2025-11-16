@@ -80,6 +80,8 @@ export function markdown(str) {
       }</code></pre>`
     },
   }})
+  // fix marked parse bug
+  str=str.replace(/(\*\*[^*]+\*\*)([\S])/g, `$1 $2`)
   return _marked.parse(str, {
     mangle: false,
     headerIds: false,
