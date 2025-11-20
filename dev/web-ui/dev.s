@@ -6,6 +6,7 @@ const IS_PACK=argv[1]==='build' || argv[3]==='pack'
 const DEV_ROOT=__dirname+'/..'
 const APP_ROOT=DEV_ROOT+'/..'
 const SERVER_ROOT=APP_ROOT+'/server'
+const DIST_DIR=APP_ROOT+'/dist'
 
 const {App: OllamaApiRoute}=include(SERVER_ROOT+'/ollama.s')
 
@@ -259,6 +260,14 @@ function pack(entryFile='/src/App.jsx') {
 
 }
 
+function patchContent(src) {
+  const fs=require('fs')
+  if(src.indexOf('font_bootstrap-icons.min.css')>-1) {
+    const str=fs.readFileSync(src, 'utf8')
+    fs.writeFileSync(src, str.replace(/(url\(")(fonts\/bootstrap-icons\.)/g, '$1/localAsset?p=https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/$2'))
+  }
+}
+
 // ------------------------------------------------------------
 // ルーティングクラス（名前は変更不可）
 // ------------------------------------------------------------
@@ -292,6 +301,33 @@ class AppRoute extends OllamaApiRoute{
   static getActionName() {
     if($_PATHNAME==='/sw.js') return 'serviceWorkerAction'
     return ($_QUERY.action || $_PATHNAME.substr(1) || 'index') + 'Action';
+  }
+
+  async localAssetAction() {
+    const fs=require('fs')
+    const dir=DIST_DIR+'/local-asset'
+    try{
+      fs.mkdirSync(dir)
+    }catch(e) {}
+    const url=require('url')
+    if(CDN_FILES.includes($_QUERY.p)) {
+      const fn=url.parse($_QUERY.p).pathname.replace(/\//g, '_')
+      if(!fs.existsSync(dir+'/'+fn)) {
+        const x=await fetch($_QUERY.p)
+        const headers={}
+        x.headers.forEach((value, key)=>{
+          headers[key]=value
+        })
+        fs.writeFileSync(dir+'/'+fn+'.h', JSON.stringify(headers))
+        fs.writeFileSync(dir+'/'+fn, Buffer.from(await x.arrayBuffer()))
+        patchContent(dir+'/'+fn)
+      }
+      const headers=JSON.parse(fs.readFileSync(dir+'/'+fn+'.h', 'utf8'))
+      setResponseHeaders(headers)
+      sendFile(dir+'/'+fn)
+      return
+    }
+    throw new Error('forbidden')
   }
 
   serviceWorkerAction() {
@@ -345,8 +381,6 @@ class AppRoute extends OllamaApiRoute{
 
   async buildAction() {
     const fs=require('fs')
-    const DIST_DIR=APP_ROOT+'/dist'
-
     const toES5=code=>transformJSX('/index.js', code)
 
     console.log('pack files..')

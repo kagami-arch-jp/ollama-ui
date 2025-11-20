@@ -25,7 +25,10 @@ if ('serviceWorker' in navigator) {
 <?js
 
 let out=[]
-for(const src of [...CDN_FILES]) {
+for(let src of [...CDN_FILES]) {
+  if(!IS_PACK) {
+    src='/localAsset?p='+encodeURIComponent(src)
+  }
   if(src.endsWith('.js')) {
     out.push(`<script src="${src}" type="text/javascript"></script>`)
   }else if(src.endsWith('.css')) {

@@ -47,7 +47,7 @@ async function getLLMLog(query) {
     console.log("please wait..\n")
     const ret=await getLLMLog({
       stream: true,
-      model: 'gemma3n:e4b-it-fp16',
+      model: 'phi4:14b',
       messages: [
         {
           role: 'user',
