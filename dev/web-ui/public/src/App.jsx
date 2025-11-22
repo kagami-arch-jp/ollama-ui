@@ -34,6 +34,10 @@ function StatusBar(props) {
   const [activeTabIdx, set_activeTabIdx]=store.activeTabIdx.use()
   const historyCount=_store.useHistoryCount()
   const {about}=store
+
+  const messages=store.messages.useValue()
+  const {isResponsing}=messages
+
   return <div className='statusbar-box'>
     <Nav
       className='statusbar'
@@ -51,9 +55,10 @@ function StatusBar(props) {
             }
           </>,
         ].map((txt, idx)=><Nav.Item key={idx} onClick={_=>{
+          if(isResponsing) return;
           set_activeTabIdx(idx)
         }}>
-          <Nav.Link eventKey={idx}>{txt}</Nav.Link>
+          <Nav.Link disabled={isResponsing} eventKey={idx}>{txt}</Nav.Link>
         </Nav.Item>)
       }
     </Nav>
@@ -441,6 +446,8 @@ function MsgBox(props) {
   const {list, isResponsing}=messages
   const boxRef=React.useRef(null)
 
+  const [hideInput, set_hideInput]=store.hideInput.use()
+
   function scroll() {
     boxRef.current.scrollTo(0, 9e9)
   }
@@ -523,6 +530,18 @@ function MsgBox(props) {
                 }}>
                   <i className="new-ico bi bi-arrow-return-left"></i>
                   New chat
+                </Button>
+              </span>
+            </OverlayTrigger>
+            <OverlayTrigger overlay={<Tooltip id="tooltip-newchat">{hideInput? 'Show': 'Hide'} input box</Tooltip>}>
+              <span className="d-inline-block">
+                <Button variant='primary' disabled={
+                  isResponsing || !list.length
+                } className='btn-sm' onClick={_=>{
+                  set_hideInput(!hideInput)
+                }}>
+                  <i className={cls("new-ico bi", hideInput? "bi-arrows-fullscreen": "bi-arrows-angle-contract")}></i>
+                  {hideInput? 'Show': 'Hide'} input box
                 </Button>
               </span>
             </OverlayTrigger>
@@ -638,7 +657,24 @@ function InputArea(props) {
   const [enterSend, set_enterSend]=store.enterSend.use()
   const [multiLineInput, set_multiLineInput]=store.multiLineInput.use()
 
+  const [hideInput, set_hideInput]=store.hideInput.use()
+
   const showAsMultiLine=wideScreen || multiLineInput
+
+  React.useEffect(_=>{
+    if(!messages.list.length) set_hideInput(false)
+  }, [messages])
+
+  React.useEffect(_=>{
+    const [evt, fn]=['keydown', e=>{
+      if(!e.shiftKey || !messages.list.length || messages.isResponsing) return;
+      if([e.code, e.key].includes("Escape") || e.keyCode===27) {
+        set_hideInput(!store.hideInput.getValue())
+      }
+    }]
+    window.addEventListener(evt, fn)
+    return _=>window.removeEventListener(evt, fn)
+  }, [])
 
   React.useEffect(_=>{
     if(messages.isResponsing) return;
@@ -654,7 +690,7 @@ function InputArea(props) {
     return true
   }
 
-  return <InputGroup className='input-area'>
+  return <InputGroup className={cls('input-area', hideInput && 'hide')}>
     <FormControl
       ref={target=>{
         inputRef.current=target

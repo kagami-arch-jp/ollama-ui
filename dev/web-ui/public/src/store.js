@@ -51,6 +51,8 @@ export const store={
 
   wideScreen: createSharedState(isWideScreen()),
 
+  hideInput: createSharedState(false),
+
   about: document.querySelector('[type="text/x-template"][id="site-about"]')?.innerHTML,
 }
 

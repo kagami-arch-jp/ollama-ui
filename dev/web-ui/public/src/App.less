@@ -288,6 +288,13 @@ html, body{
         align-items: flex-end;
         padding: 10px;
         padding-top: 0;
+        transition: .3s;
+        &.hide{
+          width: 0 !important;
+          height: 0;
+          overflow: hidden;
+          opacity: 0;
+        }
         .stop-btn{
           position: absolute;
           left: 0;
