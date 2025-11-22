@@ -26,7 +26,7 @@ if ('serviceWorker' in navigator) {
 
 let out=[]
 for(let src of [...CDN_FILES]) {
-  if(!IS_PACK) {
+  if(!IS_PACK && !BUILD) {
     src='/localAsset?p='+encodeURIComponent(src)
   }
   if(src.endsWith('.js')) {
