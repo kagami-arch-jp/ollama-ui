@@ -662,7 +662,7 @@ function InputArea(props) {
   const showAsMultiLine=wideScreen || multiLineInput
 
   React.useEffect(_=>{
-    if(!messages.list.length) set_hideInput(false)
+    if(!messages.list.length || messages.isResponsing) set_hideInput(false)
   }, [messages])
 
   React.useEffect(_=>{
