@@ -440,6 +440,38 @@ function HistoryPanel(props) {
   </div>
 }
 
+function ExposureComponent({ children}) {
+  const ref = React.useRef(null);
+
+  const [height, set_height]=React.useState(-1)
+  const [show, set_show]=React.useState(true)
+
+  React.useEffect(() => {
+    if (!ref.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          set_show(true)
+          set_height(ref.current.getBoundingClientRect().height)
+        } else {
+          set_show(false)
+        }
+      }
+    );
+
+    observer.observe(ref.current);
+
+    return () => {
+      if (ref.current) {
+        observer.unobserve(ref.current);
+      }
+    };
+  }, []);
+
+  return <div ref={ref} style={{height: height<0? 'auto': height}}>{height<0 || show? children: null}</div>;
+}
+
 function MsgBox(props) {
   const systemPrompt=_store.getPresetPrompt(false)
   const messages=store.messages.useValue()
@@ -578,7 +610,7 @@ function Msg(props) {
   }=msg
 
   const [plain, set_plain]=React.useState(false)
-  return <div key={key} class={cls(
+  return <ExposureComponent><div key={key} class={cls(
     'text',
     isQuestion? 'question': 'answer',
     isActive && 'active',
@@ -642,6 +674,7 @@ function Msg(props) {
       }
     </div>
   </div>
+  </ExposureComponent>
 }
 
 function InputArea(props) {
