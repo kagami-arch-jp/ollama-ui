@@ -9,6 +9,7 @@ require('./dist/local-asset/_npm_@highlightjs_cdn-assets@11.11.1_highlight.min.j
 require('./dist/local-asset/_npm_@highlightjs_cdn-assets@11.11.1_styles_github-dark.min.css');
 require('./dist/local-asset/_npm_bootstrap-icons@1.13.1_font_bootstrap-icons.min.css');
 require('./dist/local-asset/_npm_bootstrap@4.5.1_dist_css_bootstrap.min.css');
+require('./dist/local-asset/_npm_intersection-observer-polyfill_dist_IntersectionObserver.js');
 require('./dist/local-asset/_npm_marked@16.4.1_lib_marked.umd.js');
 require('./dist/local-asset/_npm_react-bootstrap@1.6.8_dist_react-bootstrap.min.js');
 require('./dist/local-asset/_npm_react-cross-component-state@1.0.2_index.umd.js');
