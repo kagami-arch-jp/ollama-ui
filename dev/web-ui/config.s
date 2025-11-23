@@ -2,8 +2,6 @@
 
 const CDN_FILES=[
 
-  'https://cdn.jsdelivr.net/npm/intersection-observer-polyfill/dist/IntersectionObserver.js',
-
   'https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js',
   'https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js',
   'https://cdn.jsdelivr.net/npm/react-cross-component-state@1.0.2/index.umd.js',
