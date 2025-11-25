@@ -7,7 +7,7 @@ import * as _store from './store'
 import * as api from './api'
 import {cls, isLocalServer, markdown} from '/utils'
 
-import {Modal, ButtonGroup, OverlayTrigger, Badge, Tooltip, Alert, Nav, Row, Col, Form, Button, InputGroup, FormControl, Tab, Accordion, Card, Spinner} from 'react-bootstrap'
+import {Carousel, Modal, ButtonGroup, OverlayTrigger, Badge, Tooltip, Alert, Nav, Row, Col, Form, Button, InputGroup, FormControl, Tab, Accordion, Card, Spinner} from 'react-bootstrap'
 
 _store.initStore()
 
@@ -17,15 +17,27 @@ function App(props) {
 
   _store.useWideScreenChange()
 
+  const idx=store.activeTabIdx.useValue()
   return <>
     <StatusBar />
-    {
-      [
-        <ChatPanel />,
-        <SettingPanel />,
-        <HistoryPanel />,
-      ][store.activeTabIdx.useValue()]
-    }
+    <Carousel {...{
+      controls: false,
+      touch: false,
+      indicators: false,
+      slide: true,
+      interval: 300,
+      activeIndex: idx,
+    }}>
+      <Carousel.Item>
+        <ChatPanel />
+      </Carousel.Item>
+      <Carousel.Item>
+        <SettingPanel />
+      </Carousel.Item>
+      <Carousel.Item>
+        <HistoryPanel />
+      </Carousel.Item>
+    </Carousel>
     <Dialog />
   </>
 }
