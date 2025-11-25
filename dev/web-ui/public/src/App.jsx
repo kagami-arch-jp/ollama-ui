@@ -42,6 +42,33 @@ function App(props) {
   </>
 }
 
+function ExposureComponent({children}) {
+  const [isVisible, setIsVisible] = React.useState(false);
+  const [height, setHeight] = React.useState(-1);
+  const divRef=React.useRef(null)
+
+  if(!window.IntersectionObserver) return children
+
+  React.useEffect(() => {
+    const e = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setHeight(divRef.current.children[0].offsetHeight)
+          setIsVisible(false);
+        }
+      });
+    });
+    e.observe(divRef.current)
+    return () => e.disconnect()
+  }, [])
+
+  return <div ref={divRef} style={{height: height<0 || isVisible? 'auto': height}}>{
+    isVisible || height<0? children: null
+  }</div>
+}
+
 function StatusBar(props) {
   const [activeTabIdx, set_activeTabIdx]=store.activeTabIdx.use()
   const historyCount=_store.useHistoryCount()
@@ -590,7 +617,7 @@ function Msg(props) {
   }=msg
 
   const [plain, set_plain]=React.useState(false)
-  return <div key={key} class={cls(
+  return <ExposureComponent><div key={key} class={cls(
     'text',
     isQuestion? 'question': 'answer',
     isActive && 'active',
@@ -653,7 +680,7 @@ function Msg(props) {
           <Spinner style={{margin: 10}} size='sm' animation="border" />
       }
     </div>
-  </div>
+  </div></ExposureComponent>
 }
 
 function InputArea(props) {
