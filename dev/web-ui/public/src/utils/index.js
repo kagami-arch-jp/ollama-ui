@@ -88,8 +88,6 @@ export function markdown(str) {
   })
 }
 
-window.XX=markdown
-
 export async function loadScript(src, isModule, jscode) {
   return new Promise((resolve, reject)=>{
     const s=document.createElement('script')
