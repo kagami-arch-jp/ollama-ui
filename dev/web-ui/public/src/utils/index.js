@@ -68,11 +68,10 @@ export function markdown(str) {
   const _marked=new marked.Marked
   _marked.use({renderer: {
     html: x=>{
-      return x.raw.replace(/<br\s*\/?>/g, '\n')
-        .replace(/<\/?|</g, _=>{
-          if(_==='<') return '&lt;'
-        })
-        .replace(/\n/g, '<br />')
+      return x.raw.replace(/<(\/?)([a-z]+)/ig, (_, prefix, name)=>{
+        if(['br', 'hr', 'ul', 'ol', 'li', 'b'].includes(name.toLowerCase())) return _
+        return '&lt;'+prefix+name
+      })
     },
     code: e=>{
       return `<pre><code class="hljs language-${e.lang || 'markdown'}">${
@@ -88,6 +87,8 @@ export function markdown(str) {
     silent: true,
   })
 }
+
+window.XX=markdown
 
 export async function loadScript(src, isModule, jscode) {
   return new Promise((resolve, reject)=>{

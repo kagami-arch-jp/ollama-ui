@@ -17,6 +17,11 @@ function App(props) {
 
   _store.useWideScreenChange()
 
+  let t=Date.now()
+  React.useEffect(_=>{
+    console.log('first render:', Date.now()-t)
+  }, [])
+
   const idx=store.activeTabIdx.useValue()
   return <>
     <StatusBar />
@@ -40,33 +45,6 @@ function App(props) {
     </Carousel>
     <Dialog />
   </>
-}
-
-function ExposureComponent({children}) {
-  const [isVisible, setIsVisible] = React.useState(false);
-  const [height, setHeight] = React.useState(-1);
-  const divRef=React.useRef(null)
-
-  if(!window.IntersectionObserver) return children
-
-  React.useEffect(() => {
-    const e = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setHeight(divRef.current.children[0].offsetHeight)
-          setIsVisible(false);
-        }
-      });
-    });
-    e.observe(divRef.current)
-    return () => e.disconnect()
-  }, [])
-
-  return <div ref={divRef} style={{height: height<0 || isVisible? 'auto': height}}>{
-    isVisible || height<0? children: null
-  }</div>
 }
 
 function StatusBar(props) {
@@ -617,7 +595,7 @@ function Msg(props) {
   }=msg
 
   const [plain, set_plain]=React.useState(false)
-  return <ExposureComponent><div key={key} class={cls(
+  return <div key={key} class={cls(
     'text',
     isQuestion? 'question': 'answer',
     isActive && 'active',
@@ -680,7 +658,7 @@ function Msg(props) {
           <Spinner style={{margin: 10}} size='sm' animation="border" />
       }
     </div>
-  </div></ExposureComponent>
+  </div>
 }
 
 function InputArea(props) {
