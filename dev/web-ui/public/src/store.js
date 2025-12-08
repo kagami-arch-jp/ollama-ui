@@ -326,9 +326,15 @@ export function useHistoryCount() {
   }, 0)
 }
 
-export function deleteHistory(i, history) {
+export function deleteHistory(key) {
   let messageHistory=store.messageHistory.getValue()
-  history.messages.splice(i, 1)
+  for(const {messages} of messageHistory) {
+    for(let i=0; i<messages.length; i++) {
+      if(messages[i].key!==key) continue
+      messages.splice(i, 1)
+      break
+    }
+  }
   messageHistory=messageHistory.filter(x=>x.messages.length)
   store.messageHistory.setValue([...messageHistory])
   api.saveMessages()
@@ -386,4 +392,12 @@ export function selectPrompt(idx) {
     val.enable=true
   }
   customPrompt.setValue({...val})
+}
+
+export function isChatPanelActive() {
+  return store.activeTabIdx.getValue()===0
+}
+
+export function isHistoryPanelActive() {
+  return store.activeTabIdx.getValue()===2
 }

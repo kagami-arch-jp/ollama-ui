@@ -431,9 +431,15 @@ function ChatPanel(props) {
 
 function HistoryPanel(props) {
   const history=store.messageHistory.useValue()
+  const historyList=React.useMemo(_=>{
+    return history.reduce((arr, h)=>arr.concat(h.messages), [])
+  }, [history])
+  const [showCount, LazyLoadComponent]=useLazyLoad({
+    initDataLength: historyList.length,
+  })
   return <div className='history-panel'>
     {
-      history.length?
+      historyList.length?
         <>
           <Alert className='clear-history' variant='danger'>
             <Button variant="danger" className="btn-sm" onClick={async _=>{
@@ -442,19 +448,88 @@ function HistoryPanel(props) {
               }
             }}>Delete all histories.</Button>
           </Alert>
-          {history.map(h=>{
-            return <div className='msgbox' key={h.messages[0].key}>
-              {h.messages.map((msg, i)=><Msg msg={msg} onDelete={async _=>{
-                if(await confirmModal('Delete this message?')) {
-                  _store.deleteHistory(i, h)
-                }
-              }} />)}
-            </div>
-          })}
+          <div className='msgbox'>
+            {
+              historyList.map((msg, i)=>{
+                return i>=showCount? null: <Wrapper key={msg.key} isBlur={_=>!_store.isHistoryPanelActive()}>
+                  <Msg msg={msg} onDelete={async _=>{
+                    if(await confirmModal('Delete this message?')) {
+                      _store.deleteHistory(msg.key)
+                    }
+                  }} />
+                </Wrapper>
+              })
+            }
+          </div>
         </>:
         <EmptyMessage />
     }
+    {LazyLoadComponent}
   </div>
+}
+
+function Wrapper({children, isBlur}) {
+  const divRef=React.useRef(null)
+  const [height, set_height]=React.useState(-1)
+  const [show, set_show]=React.useState(true)
+  return <ExposeComponent rootMargin='500px' onVisibleChange={isShow=>{
+    if(!isShow) {
+      set_height(divRef.current.offsetHeight)
+    }
+    if(isBlur?.()) return;
+    set_show(isShow)
+  }}>
+    <div ref={divRef} style={
+      (show || height<0)? null: {width: 1, height}
+    }>{show? children: null}</div>
+  </ExposeComponent>
+}
+function ExposeComponent({onVisibleChange, rootMargin='1500px', children=null}) {
+  const elementRef=React.useRef(null)
+  React.useEffect(() => {
+    if (elementRef.current) {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          onVisibleChange(entry.isIntersecting)
+        },
+        {
+          root: elementRef.current.parentNode,
+          threshold: 0.1,
+          rootMargin,
+        }
+      );
+      observer.observe(elementRef.current);
+      return () => {
+        if (elementRef.current) {
+          observer.unobserve(elementRef.current);
+        }
+      };
+    }
+  }, []);
+  return <div ref={elementRef} style={children? null: {width: 1, height: 1, marginTop: -1, marginRight: -1}}>{children}</div>
+}
+function useLazyLoad({initCount=3, stepCount=3, initDataLength, rootMargin='1500px'}) {
+  const [state, set_state]=React.useState({
+    showAll: false,
+    showCount: initCount,
+    initDataLength,
+  })
+
+  return [
+    state.showCount,
+    state.showAll? null: <ExposeComponent
+      key={state.showCount+'/'+state.initDataLength}
+      rootMargin={rootMargin}
+      onVisibleChange={isShow=>{
+        if(!isShow) return;
+        state.showCount+=stepCount
+        if(state.showCount>=state.initDataLength) {
+          state.showAll=true
+        }
+        set_state({...state})
+      }}
+    />,
+  ]
 }
 
 function MsgBox(props) {
@@ -462,6 +537,10 @@ function MsgBox(props) {
   const messages=store.messages.useValue()
   const {list, isResponsing}=messages
   const boxRef=React.useRef(null)
+
+  const [showCount, LazyLoadComponent]=useLazyLoad({
+    initDataLength: list.length,
+  })
 
   const [hideInput, set_hideInput]=store.hideInput.use()
 
@@ -521,10 +600,11 @@ function MsgBox(props) {
     <div className='msgbox' ref={target=>{
       boxRef.current=target
     }}>
+      {LazyLoadComponent}
       {
         list.length?
           <>
-          {list.map((msg, i)=><Msg
+          {list.map((msg, i)=>(i+showCount>=list.length)? <Wrapper isBlur={_=>!_store.isChatPanelActive()}><Msg
             msg={msg}
             onReload={async _=>{
               if(await confirmModal('Reload answer?')) {
@@ -536,7 +616,7 @@ function MsgBox(props) {
                 _store.deleteMessage(i)
               }
             }}
-          />)}
+          /></Wrapper>: null)}
           <center className='function-btns'>
             <OverlayTrigger overlay={<Tooltip id="tooltip-newchat">Start a new chat</Tooltip>}>
               <span className="d-inline-block">

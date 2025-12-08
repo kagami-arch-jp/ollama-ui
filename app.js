@@ -16,6 +16,8 @@ require('./dist/local-asset/_npm_react-cross-component-state@1.0.2_index.umd.js'
 require('./dist/local-asset/_npm_react-dom@18.2.0_umd_react-dom.production.min.js');
 require('./dist/local-asset/_npm_react-virtualized@9.22.6_dist_umd_react-virtualized.js');
 require('./dist/local-asset/_npm_react-virtualized@9.22.6_styles.css');
+require('./dist/local-asset/_npm_react-virtualized_dist_umd_react-virtualized.js');
+require('./dist/local-asset/_npm_react-virtualized_styles.css');
 require('./dist/local-asset/_npm_react@18.2.0_umd_react.production.min.js');
 require('./node_modules/ansi-styles/index.js');
 require('./node_modules/ansi-styles/package.json');
