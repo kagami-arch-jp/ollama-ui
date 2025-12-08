@@ -474,8 +474,9 @@ function Wrapper({children, isBlur}) {
   const [height, set_height]=React.useState(-1)
   const [show, set_show]=React.useState(true)
   return <ExposeComponent rootMargin='500px' onVisibleChange={isShow=>{
+    if(!divRef.current) return;
     if(!isShow) {
-      set_height(divRef.current?.offsetHeight)
+      set_height(divRef.current.offsetHeight)
     }
     if(isBlur?.()) return;
     set_show(isShow)
