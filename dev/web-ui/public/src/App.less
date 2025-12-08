@@ -498,6 +498,8 @@ html, body{
     .history-panel{
       height: 100%;
       overflow: auto;
+      display: flex;
+      flex-direction: column;
       .clear-history{
         margin: 0 10px;
         position: sticky;
@@ -506,9 +508,7 @@ html, body{
       }
       .msgbox{
         height: unset;
-      }
-      .msgbox+.msgbox{
-        border-top: 1px solid #ccc;
+        overflow: auto;
       }
     }
 

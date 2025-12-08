@@ -460,11 +460,11 @@ function HistoryPanel(props) {
                 </Wrapper>
               })
             }
+            {LazyLoadComponent}
           </div>
         </>:
         <EmptyMessage />
     }
-    {LazyLoadComponent}
   </div>
 }
 
