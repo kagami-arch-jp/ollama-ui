@@ -452,8 +452,9 @@ function HistoryPanel(props) {
             {
               historyList.map((msg, i)=>{
                 return i>=showCount? null: <Wrapper key={msg.key} isBlur={_=>!_store.isHistoryPanelActive()}>
-                  <Msg msg={msg} onDelete={async _=>{
+                  <Msg msg={msg} onDelete={async animation=>{
                     if(await confirmModal('Delete this message?')) {
+                      await animation()
                       _store.deleteHistory(msg.key)
                     }
                   }} />
@@ -474,7 +475,7 @@ function Wrapper({children, isBlur}) {
   const [show, set_show]=React.useState(true)
   return <ExposeComponent rootMargin='500px' onVisibleChange={isShow=>{
     if(!isShow) {
-      set_height(divRef.current.offsetHeight)
+      set_height(divRef.current?.offsetHeight)
     }
     if(isBlur?.()) return;
     set_show(isShow)
@@ -611,8 +612,9 @@ function MsgBox(props) {
                 _store.reloadAnswer(i)
               }
             }}
-            onDelete={async _=>{
+            onDelete={async animation=>{
               if(await confirmModal('Delete this message?')) {
+                await animation()
                 _store.deleteMessage(i)
               }
             }}
@@ -674,8 +676,9 @@ function Msg(props) {
     isError,
   }=msg
 
+  const divRef=React.useRef(null)
   const [plain, set_plain]=React.useState(false)
-  return <div key={key} class={cls(
+  return <div key={key} ref={divRef} class={cls(
     'text',
     isQuestion? 'question': 'answer',
     isActive && 'active',
@@ -711,7 +714,14 @@ function Msg(props) {
               </Button>)
             }
             {
-              onDelete && <Button variant="danger" className='btn-sm' onClick={onDelete}>
+              onDelete && <Button variant="danger" className='btn-sm' onClick={_=>{
+                onDelete(async _=>{
+                  divRef.current.className+=' pre-out'
+                  await new Promise(resolve=>{
+                    setTimeout(resolve, 400)
+                  })
+                })
+              }}>
                 <i className="bi bi-x-lg"></i>
               </Button>
             }
