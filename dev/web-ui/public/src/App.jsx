@@ -473,20 +473,24 @@ function Wrapper({children, isBlur}) {
   const divRef=React.useRef(null)
   const [height, set_height]=React.useState(-1)
   const [show, set_show]=React.useState(true)
-  return <ExposeComponent rootMargin='500px' onVisibleChange={isShow=>{
-    if(!divRef.current) return;
-    if(!isShow) {
-      set_height(divRef.current.offsetHeight)
-    }
-    if(isBlur?.()) return;
-    set_show(isShow)
-  }}>
-    <div ref={divRef} style={
-      (show || height<0)? null: {width: 1, height}
-    }>{show? children: null}</div>
-  </ExposeComponent>
+  return <ExposeComponent
+    rootMargin='500px'
+    onVisibleChange={isShow=>{
+      if(!divRef.current) return;
+      if(!isShow) {
+        set_height(divRef.current.offsetHeight)
+      }
+      if(isBlur?.()) return;
+      set_show(isShow)
+    }}
+    style={(show || height<0)? null: {width: 1, height}}
+    children={show? children: null}
+    bindElementRef={div=>{
+      divRef.current=div
+    }}
+  />
 }
-function ExposeComponent({onVisibleChange, rootMargin='1500px', children=null}) {
+function ExposeComponent({onVisibleChange, bindElementRef, style, rootMargin='1500px', children=null}) {
   const elementRef=React.useRef(null)
   React.useEffect(() => {
     if (elementRef.current) {
@@ -508,7 +512,13 @@ function ExposeComponent({onVisibleChange, rootMargin='1500px', children=null}) 
       };
     }
   }, []);
-  return <div ref={elementRef} style={children? null: {width: 1, height: 1, marginTop: -1, marginRight: -1}}>{children}</div>
+  return <div ref={div=>{
+    elementRef.current=div
+    if(bindElementRef) bindElementRef(div)
+  }} style={children?
+    null:
+    (style || {width: 1, height: 1, marginTop: -1, marginRight: -1})
+  }>{children}</div>
 }
 function useLazyLoad({initCount=3, stepCount=3, initDataLength, rootMargin='1500px'}) {
   const [state, set_state]=React.useState({
