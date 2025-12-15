@@ -63,7 +63,12 @@ function StatusBar(props) {
     >
       {
         [
-          <><i class="bi bi-person-workspace"></i>Chat</>,
+          <>
+            <i class="bi bi-person-workspace"></i>Chat
+            {
+              messages.list.length>0 && <Badge variant="info" className='history-count'>{messages.list.length}</Badge>
+            }
+          </>,
           <><i class="bi bi-gear-fill"></i>Setting</>,
           <>
             <i class="bi bi-clipboard2-fill"></i>History

@@ -203,20 +203,22 @@ export function ask(question, answerIdx=-1) {
   }, 200)
 
   const sendWithHistory=store.sendWithHistory.getValue()
-  const prompt=getPresetPrompt(true)
-  const msgs=[
-    {isQuestion: true, text: prompt},
-  ]
+
   const history=messages.list.slice(0, isNewQuestion? messages.list.length-1: answerIdx)
-  const ques=history.pop()
 
-  if(sendWithHistory) {
-    msgs.push(...history, ques)
-  }else{
-    msgs.push(ques)
-  }
+  const msgs=resolveHistory(history, sendWithHistory)
 
-  api.chat(msgs, (e, isEnd, ret)=>{
+  const messagesParam=msgs.map(
+    ({isQuestion, text, thinking})=>({
+      role: isQuestion? 'user': 'system',
+      content: isQuestion && text.indexOf('```')===-1?
+        '```plain\n'+text+'\n```':
+        text,
+      thinking,
+    })
+  )
+
+  api.chat(messagesParam, (e, isEnd, ret)=>{
     if(patch.isEnd) return;
 
     const {content, thinking}=JSON.parse(ret || '{}')
@@ -238,9 +240,6 @@ export function ask(question, answerIdx=-1) {
 
     update(err, isEnd)
   })
-
-
-
 }
 
 export async function loadModels() {
@@ -283,16 +282,62 @@ export function selectModel(idx) {
   store.model.setValue({...model})
 }
 
-export function getPresetPrompt(returnRealtime) {
+export function getPresetPrompt(returnRealtime, customPromptHandler) {
   const now=(new Date).toLocaleString()
   const day='日月火水木金土'.charAt((new Date).getDay())+'曜日'
   const systemPrompt=store.prompt.getValue()
   const customPrompt=store.customPrompt.getValue()
+  customPromptHandler=customPromptHandler || (x=>x)
   return [
     returnRealtime && `今は「${now}」です。今日は「${day}」です。`,
     systemPrompt.enable && systemPrompt.value,
-    customPrompt.enable && customPrompt.list[customPrompt.idx].content,
+    customPrompt.enable && customPromptHandler(customPrompt.list[customPrompt.idx].content),
   ].filter(Boolean).join('\n')
+}
+
+function isTaskPrompt(customPrompt) {
+  return customPrompt.indexOf('@CLEARALL()')>-1
+}
+
+function parseCustomPrompt(customPrompt, history) {
+  if(!isTaskPrompt(customPrompt)) {
+    return {
+      prompt: customPrompt,
+      history,
+    }
+  }
+  const ret={prompt: null, history}
+  customPrompt.replace(/@(HEAD|REPLACE_HEAD)\(\):([\s\S]+?)(?=@(HEAD|REPLACE_HEAD)|$)/g, (_, type, str)=>{
+    if(type==='HEAD' && history.length===1) {
+      ret.prompt=str
+    }
+    if(type==='REPLACE_HEAD' && history.length>1) {
+      ret.prompt=str.replace(/@USE\((\d+)\)/g, (_, n)=>{
+        return history[n-1].text
+      })
+      ret.history=history.slice(2)
+    }
+  })
+  return ret
+}
+
+export function resolveHistory(history, sendWithHistory) {
+  const msgs=[]
+
+  const headPrompt=getPresetPrompt(true, customPrompt=>{
+    const t=parseCustomPrompt(customPrompt, history)
+    history=t.history
+    return t.prompt
+  })
+
+  msgs.push({isQuestion: true, text: headPrompt})
+  const ques=history.pop()
+  if(sendWithHistory) {
+    msgs.push(...history, ques)
+  }else{
+    msgs.push(ques)
+  }
+  return msgs
 }
 
 export function newChat() {
