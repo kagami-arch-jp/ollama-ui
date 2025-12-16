@@ -27,6 +27,20 @@ export async function chat(messages, onData) {
   })
 }
 
+/**
+ chatMerge([
+   {key: 'xx', messages: [...]},
+   {messages: [...]},
+ ], ..)
+ */
+export async function chatMerge(messagesGroup, onData) {
+  for(let i=0; i<messagesGroup.length; i++) {
+    const {key, messages}=messagesGroup[i]
+    const isFinal=i===messagesGroup.length-1
+    await chat(messages, (e, isEnd, ret)=>onData(e, isEnd && isFinal, ret, key))
+  }
+}
+
 export function loadConfig() {
   try{
     const [

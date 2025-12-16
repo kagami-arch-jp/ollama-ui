@@ -681,6 +681,7 @@ function Msg(props) {
     text,
     thinking,
     html,
+    subdata,
 
     time,
     user,
@@ -746,6 +747,26 @@ function Msg(props) {
       </div>
     </div>
     <div className='message'>
+      {(_=>{
+        const ret=[]
+        for(const key in subdata) {
+          if(key==='undefined') continue;
+          const {html, text}=subdata[key]
+          ret.push(<div className={'subdata subdata-'+key}>
+            {
+            plain || !html?
+              <div className='md-text plain'>
+                {thinking && `<think>\n${thinking}\n</think>`}
+                {text}
+              </div>:
+              <div className='md-text' dangerouslySetInnerHTML={{
+                __html: html,
+              }} />
+            }
+          </div>)
+        }
+        return ret
+      })()}
       {
         (text || thinking)? (
           isQuestion?

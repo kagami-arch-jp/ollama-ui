@@ -149,6 +149,7 @@ function newMsg(content) {
     isQuestion: isQuestion || false,
     text: isQuestion? content: '',
     user: isQuestion? 'anonymous': '',
+    subdata: {},
     thinking: '',
     html: '',
     model: isQuestion? '': getModelName(),
@@ -187,10 +188,16 @@ export function ask(question, answerIdx=-1) {
   const patch=buildChatPatch(getModelName())
 
   const update=throttle((err, isEnd)=>{
-    ans.html=[
-      ans.thinking && `<div class="think">${markdown(ans.thinking)}</div>`,
-      ans.text && markdown(ans.text),
-    ].filter(Boolean).join('')
+    const toHtml=ans=>{
+      ans.html=[
+        ans.thinking && `<div class="think">${markdown(ans.thinking)}</div>`,
+        ans.text && markdown(ans.text),
+      ].filter(Boolean).join('')
+    }
+    ans.html=toHtml(ans)
+    for(let key in ans.subdata) {
+      ans.subdata[key].html=toHtml(ans.subdata[key])
+    }
     if(err || isEnd) {
       api.resetOllamaClient()
       ans.isPending=false
@@ -208,33 +215,53 @@ export function ask(question, answerIdx=-1) {
 
   const msgs=resolveHistory(history, sendWithHistory)
 
+  const wrapMessage=x=>x.indexOf('```')===-1?
+    '```plain\n'+x+'\n```':
+    x
+
   const messagesParam=msgs.map(
     ({isQuestion, text, thinking})=>({
       role: isQuestion? 'user': 'system',
-      content: isQuestion && text.indexOf('```')===-1?
-        '```plain\n'+text+'\n```':
-        text,
+      content: isQuestion && wrapMessage(text),
       thinking,
     })
   )
-
-  api.chat(messagesParam, (e, isEnd, ret)=>{
+  const merge=[{messages: messagesParam}]
+  if(msgs[msgs.length-1].subPrompt) {
+    merge.unshift({key: 'prequery', messages: [
+      {
+        role: 'user',
+        content: wrapMessage(msgs[msgs.length-1].subPrompt),
+      },
+      {
+        role: 'user',
+        content: wrapMessage(msgs[msgs.length-1].text),
+      },
+    ]})
+  }
+  api.chatMerge(merge, (e, isEnd, ret, key)=>{
     if(patch.isEnd) return;
 
     const {content, thinking}=JSON.parse(ret || '{}')
 
-    if(content) ans.text+=content
-    else if(thinking) ans.thinking+=thinking
+    if(key) {
+      ans.subdata[key]=ans.subdata[key] || newMsg()
+    }
 
-    const err=e || (isEnd && !ans.text? new Error('Unknown error'): null)
+    const getAns=_=>key? ans.subdata[key]: ans
+
+    if(content) getAns().text+=content
+    else if(thinking) getAns().thinking+=thinking
+
+    const err=e || (isEnd && !getAns().text? new Error('Unknown error'): null)
     if(err) {
-      ans.text+='\n### '+err.message
-      ans.isError=true
+      getAns().text+='\n### '+err.message
+      getAns().isError=true
     }else if(content) {
-      const [realEnd, text]=patch.text(ans.text)
+      const [realEnd, text]=patch.text(getAns().text)
       if(realEnd) {
         isEnd=true
-        ans.text=text
+        getAns().text=text
       }
     }
 
@@ -306,8 +333,8 @@ function parseCustomPrompt(customPrompt, history) {
       history,
     }
   }
-  const ret={prompt: null, history}
-  customPrompt.replace(/@(HEAD|REPLACE_HEAD)\(\):([\s\S]+?)(?=@(HEAD|REPLACE_HEAD)|$)/g, (_, type, str)=>{
+  const ret={prompt: null, subPrompt: null, history, isHead: true}
+  customPrompt.replace(/@(HEAD|REPLACE_HEAD|SUB_TASK_BEFORE)\(\):([\s\S]+?)(?=@(HEAD|REPLACE_HEAD|SUB_TASK_BEFORE)|$)/g, (_, type, str)=>{
     if(type==='HEAD' && history.length===1) {
       ret.prompt=str
     }
@@ -316,6 +343,11 @@ function parseCustomPrompt(customPrompt, history) {
         return history[n-1].text
       })
       ret.history=history.slice(2)
+      ret.isHead=false
+    }
+    if(type==='SUB_TASK_BEFORE') {
+      ret.subPrompt=str
+      ret.isHead=false
     }
   })
   return ret
@@ -323,15 +355,14 @@ function parseCustomPrompt(customPrompt, history) {
 
 export function resolveHistory(history, sendWithHistory) {
   const msgs=[]
-
+  const ques=history.pop()
   const headPrompt=getPresetPrompt(true, customPrompt=>{
     const t=parseCustomPrompt(customPrompt, history)
     history=t.history
+    if(t.subPrompt) ques.subPrompt=getPresetPrompt(true, _=>t.subPrompt)
     return t.prompt
   })
-
   msgs.push({isQuestion: true, text: headPrompt})
-  const ques=history.pop()
   if(sendWithHistory) {
     msgs.push(...history, ques)
   }else{
