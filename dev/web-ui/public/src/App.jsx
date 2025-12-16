@@ -750,8 +750,8 @@ function Msg(props) {
       {(_=>{
         const ret=[]
         for(const key in subdata) {
-          if(key==='undefined') continue;
           const {html, text}=subdata[key]
+          if(!html && !text) continue
           ret.push(<div className={'subdata subdata-'+key}>
             {
             plain || !html?

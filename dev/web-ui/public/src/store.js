@@ -194,9 +194,9 @@ export function ask(question, answerIdx=-1) {
         ans.text && markdown(ans.text),
       ].filter(Boolean).join('')
     }
-    ans.html=toHtml(ans)
+    toHtml(ans)
     for(let key in ans.subdata) {
-      ans.subdata[key].html=toHtml(ans.subdata[key])
+      toHtml(ans.subdata[key])
     }
     if(err || isEnd) {
       api.resetOllamaClient()
@@ -335,19 +335,21 @@ function parseCustomPrompt(customPrompt, history) {
   }
   const ret={prompt: null, subPrompt: null, history, isHead: true}
   customPrompt.replace(/@(HEAD|REPLACE_HEAD|SUB_TASK_BEFORE)\(\):([\s\S]+?)(?=@(HEAD|REPLACE_HEAD|SUB_TASK_BEFORE)|$)/g, (_, type, str)=>{
-    if(type==='HEAD' && history.length===1) {
-      ret.prompt=str
-    }
-    if(type==='REPLACE_HEAD' && history.length>1) {
-      ret.prompt=str.replace(/@USE\((\d+)\)/g, (_, n)=>{
-        return history[n-1].text
-      })
-      ret.history=history.slice(2)
-      ret.isHead=false
-    }
-    if(type==='SUB_TASK_BEFORE') {
-      ret.subPrompt=str
-      ret.isHead=false
+    if(history.length===0) {
+      if(type==='HEAD') {
+        ret.prompt=str
+      }
+    }else{
+      if(type==='REPLACE_HEAD') {
+        ret.prompt=str.replace(/@USE\((\d+)\)/g, (_, n)=>{
+          return history[n-1].text
+        })
+        ret.history=history.slice(2)
+        ret.isHead=false
+      }else if(type==='SUB_TASK_BEFORE') {
+        ret.subPrompt=str
+        ret.isHead=false
+      }
     }
   })
   return ret
@@ -359,7 +361,11 @@ export function resolveHistory(history, sendWithHistory) {
   const headPrompt=getPresetPrompt(true, customPrompt=>{
     const t=parseCustomPrompt(customPrompt, history)
     history=t.history
-    if(t.subPrompt) ques.subPrompt=getPresetPrompt(true, _=>t.subPrompt)
+    if(!t.isHead && t.subPrompt) {
+      ques.subPrompt=getPresetPrompt(true, _=>t.subPrompt)
+    }else{
+      ques.subPrompt=''
+    }
     return t.prompt
   })
   msgs.push({isQuestion: true, text: headPrompt})
