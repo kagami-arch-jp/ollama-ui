@@ -7,7 +7,7 @@ import * as _store from './store'
 import * as api from './api'
 import {cls, isLocalServer, markdown} from '/utils'
 
-import {Carousel, Modal, ButtonGroup, OverlayTrigger, Badge, Tooltip, Alert, Nav, Row, Col, Form, Button, InputGroup, FormControl, Tab, Accordion, Card, Spinner} from 'react-bootstrap'
+import {Modal, ButtonGroup, OverlayTrigger, Badge, Tooltip, Alert, Nav, Row, Col, Form, Button, InputGroup, FormControl, Tab, Accordion, Card, Spinner} from 'react-bootstrap'
 
 _store.initStore()
 
@@ -25,24 +25,19 @@ function App(props) {
   const idx=store.activeTabIdx.useValue()
   return <>
     <StatusBar />
-    <Carousel {...{
-      controls: false,
-      touch: false,
-      indicators: false,
-      slide: true,
-      interval: 300,
-      activeIndex: idx,
+    <div className='my-slider' style={{
+      transform: 'translateX(-'+idx+'00%)',
     }}>
-      <Carousel.Item>
+      <div className='my-slider-item'>
         <ChatPanel />
-      </Carousel.Item>
-      <Carousel.Item>
+      </div>
+      <div className='my-slider-item'>
         <SettingPanel />
-      </Carousel.Item>
-      <Carousel.Item>
+      </div>
+      <div className='my-slider-item'>
         <HistoryPanel />
-      </Carousel.Item>
-    </Carousel>
+      </div>
+    </div>
     <Dialog />
   </>
 }
@@ -425,7 +420,7 @@ function EmptyMessage(props) {
 function ChatPanel(props) {
   const {wideScreen}=store
   return <div className={cls('chat-panel', wideScreen.useValue() && 'wide-screen')}>
-    <MsgBox />
+    <MsgBoxArea />
     <InputArea />
   </div>
 }
@@ -435,9 +430,6 @@ function HistoryPanel(props) {
   const historyList=React.useMemo(_=>{
     return history.reduce((arr, h)=>arr.concat(h.messages), [])
   }, [history])
-  const [showCount, LazyLoadComponent]=useLazyLoad({
-    initDataLength: historyList.length,
-  })
   return <div className='history-panel'>
     {
       historyList.length?
@@ -449,21 +441,16 @@ function HistoryPanel(props) {
               }
             }}>Delete all histories.</Button>
           </Alert>
-          <div className='msgbox'>
-            {
-              historyList.map((msg, i)=>{
-                return i>=showCount? null: <Wrapper key={msg.key} isBlur={_=>!_store.isHistoryPanelActive()}>
-                  <Msg msg={msg} onDelete={async animation=>{
-                    if(await confirmModal('Delete this message?')) {
-                      await animation()
-                      _store.deleteHistory(msg.key)
-                    }
-                  }} />
-                </Wrapper>
-              })
-            }
-            {LazyLoadComponent}
-          </div>
+          <Msgbox
+            list={historyList}
+            onDelete={async (i, animation)=>{
+              if(await confirmModal('Delete this message?')) {
+                await animation()
+                _store.deleteHistory(historyList[i].key)
+              }
+            }}
+            isBlur={_=>!_store.isHistoryPanelActive()}
+          />
         </>:
         <EmptyMessage />
     }
@@ -545,33 +532,69 @@ function useLazyLoad({initCount=3, stepCount=3, initDataLength, rootMargin='1500
   ]
 }
 
-function MsgBox(props) {
-  const systemPrompt=_store.getPresetPrompt(false)
-  const messages=store.messages.useValue()
-  const {list, isResponsing}=messages
-  const boxRef=React.useRef(null)
+function Msgbox(props) {
+  const {
+    list,
+    scrollToBottomRef,
 
+    onReload,
+    onDelete,
+    isBlur,
+
+    children,
+  }=props
+
+  const boxRef=React.useRef(null)
   const [showCount, LazyLoadComponent]=useLazyLoad({
     initDataLength: list.length,
   })
-
-  const [hideInput, set_hideInput]=store.hideInput.use()
-
   function scroll() {
     boxRef.current.scrollTo(0, 9e9)
   }
 
   React.useEffect(_=>{
+    scroll()
+    if(scrollToBottomRef) {
+      scrollToBottomRef.current=scroll
+    }
+  }, [])
+
+  return <div className='msgbox' ref={target=>{
+    boxRef.current=target
+  }}>
+    {LazyLoadComponent}
+    {
+      list.length?
+        <>
+        {list.map((msg, i)=>(i+showCount>=list.length)?
+          <Wrapper isBlur={isBlur}>
+            <Msg {...{
+              msg,
+              onReload: onReload? ((...a)=>onReload(i, ...a)): null,
+              onDelete: onDelete? ((...a)=>onDelete(i, ...a)): null,
+            }}/>
+          </Wrapper>: null)}
+          {children}
+        </>:
+        <EmptyMessage />
+    }
+  </div>
+
+}
+
+function MsgBoxArea(props) {
+  const systemPrompt=_store.getPresetPrompt(false)
+  const messages=store.messages.useValue()
+  const {list, isResponsing}=messages
+  const [hideInput, set_hideInput]=store.hideInput.use()
+
+  const scrollerRef=React.useRef(null)
+  React.useEffect(_=>{
     if(list[list.length-1]?.isPending) {
-      scroll()
+      scrollerRef.current?.()
     }
   }, [isResponsing, list[list.length-1]?.text, list[list.length-1]?.thinking])
 
-  React.useEffect(_=>{
-    scroll()
-  }, [])
-
-  const lastScrollp=React.useRef(0)
   const [customPrompt, set_customPrompt]=store.customPrompt.use()
   return <div className='chat-messages'>
     {
@@ -610,59 +633,64 @@ function MsgBox(props) {
         </Card>
       </Accordion>
     }
-    <div className='msgbox' ref={target=>{
-      boxRef.current=target
-    }}>
-      {LazyLoadComponent}
-      {
-        list.length?
-          <>
-          {list.map((msg, i)=>(i+showCount>=list.length)? <Wrapper isBlur={_=>!_store.isChatPanelActive()}><Msg
-            msg={msg}
-            onReload={async _=>{
-              if(await confirmModal('Reload answer?')) {
-                _store.reloadAnswer(i)
-              }
-            }}
-            onDelete={async animation=>{
-              if(await confirmModal('Delete this message?')) {
-                await animation()
-                _store.deleteMessage(i)
-              }
-            }}
-          /></Wrapper>: null)}
-          <center className='function-btns'>
-            <OverlayTrigger overlay={<Tooltip id="tooltip-newchat">Start a new chat</Tooltip>}>
-              <span className="d-inline-block">
-                <Button variant='warning' disabled={
-                  isResponsing || !list.length
-                } className='btn-sm' onClick={_=>{
-                  _store.newChat()
-                }}>
-                  <i className="new-ico bi bi-arrow-return-left"></i>
-                  New chat
-                </Button>
-              </span>
-            </OverlayTrigger>
-            <OverlayTrigger overlay={<Tooltip id="tooltip-newchat">{hideInput? 'Show': 'Hide'} input box</Tooltip>}>
-              <span className="d-inline-block">
-                <Button variant='primary' disabled={
-                  isResponsing || !list.length
-                } className='btn-sm' onClick={_=>{
-                  set_hideInput(!hideInput)
-                }}>
-                  <i className={cls("new-ico bi", hideInput? "bi-arrows-fullscreen": "bi-arrows-angle-contract")}></i>
-                  {hideInput? 'Show': 'Hide'} input box
-                </Button>
-              </span>
-            </OverlayTrigger>
-          </center>
-          </>:
-          <EmptyMessage />
-      }
-    </div>
+    <Msgbox
+      list={list}
+      scrollToBottomRef={scrollerRef}
+      onReload={async i=>{
+        if(await confirmModal('Reload answer?')) {
+          _store.reloadAnswer(i)
+        }
+      }}
+      onDelete={async (i, animation)=>{
+        if(await confirmModal('Delete this message?')) {
+          await animation()
+          _store.deleteMessage(i)
+        }
+      }}
+      isBlur={_=>!_store.isChatPanelActive()}
+    >
+      <center className='function-btns'>
+        <TipButton
+          hoverText={'Start a new chat'}
+          iconClassName={'new-ico bi-arrow-return-left'}
+          variant='warning'
+          disabled={isResponsing || !list.length}
+          onClick={_=>{
+            _store.newChat()
+          }}
+          showText='New chat'
+        />
+        <TipButton
+          hoverText={(hideInput? 'Show': 'Hide')+'input box'}
+          iconClassName={cls('new-ico', hideInput? "bi-arrows-fullscreen": "bi-arrows-angle-contract")}
+          variant='primary'
+          disabled={isResponsing || !list.length}
+          onClick={_=>{
+            set_hideInput(!hideInput)
+          }}
+          showText={(hideInput? 'Show': 'Hide')+' input box'}
+        />
+      </center>
+    </Msgbox>
   </div>
 
+}
+
+function TipButton(props) {
+  const {
+    hoverText,
+    iconClassName,
+    showText,
+    ...btnProps
+  }=props
+  return <OverlayTrigger overlay={<Tooltip>{hoverText}</Tooltip>}>
+    <span className="d-inline-block">
+      <Button className='btn-sm' {...btnProps}>
+        <i className={cls("bi", iconClassName)}></i>
+        {showText}
+      </Button>
+    </span>
+  </OverlayTrigger>
 }
 
 function Msg(props) {

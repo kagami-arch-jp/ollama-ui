@@ -123,18 +123,18 @@ html, body{
     margin: 0;
     flex-direction: column;
     height: 100%;
-    overflow: auto;
+    overflow: hidden;
     display: flex;
 
-    .carousel{
+    .my-slider{
+      position: relative;
+      display: flex;
       height: 100%;
-      overflow: hidden;
-      .carousel-inner{
-        height: 100%;
-      }
-      .carousel-item{
-        height: 100%;
-        overflow: auto;
+      transition: .25s;
+      .my-slider-item{
+        width: 100%;
+        flex: none;
+        margin-bottom: 50px;
       }
     }
 
