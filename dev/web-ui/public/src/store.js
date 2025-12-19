@@ -74,6 +74,10 @@ export function exportSetting() {
     customPrompt: store.customPrompt.getValue(),
   }
 
+  ret.customPrompt.list.map(x=>{
+    if(!x.id) x.id='old-'+newUUID()
+  })
+
   const _url=URL.createObjectURL(new Blob([encodeURIComponent(JSON.stringify(ret))], {type: 'text/plain'}))
 
   const a=document.body.appendChild(document.createElement('a'))
@@ -88,6 +92,24 @@ function loadSetting(text) {
   try {
     const s=JSON.parse(decodeURIComponent(text))
     for(const k in s) {
+      if(k==='customPrompt') {
+        const oldval=store[k].getValue()
+        const newval=s[k].list.reduce((o, x)=>{
+          if(x.id) {
+            o[x.id]=x
+          }
+          return o
+        }, {})
+        oldval.list.map(o=>{
+          if(!newval[o.id]) return;
+          Object.assign(o, newval[o.id])
+          delete newval[o.id]
+        })
+        for(let id in newval) {
+          oldval.list.push(newval[id])
+        }
+        s[k]=oldval
+      }
       store[k]?.setValue(s[k])
     }
     alertModal('Import config successful!')
@@ -215,14 +237,10 @@ export function ask(question, answerIdx=-1) {
 
   const msgs=resolveHistory(history, sendWithHistory)
 
-  const wrapMessage=x=>x.indexOf('```')===-1?
-    '```plain\n'+x+'\n```':
-    x
-
   const messagesParam=msgs.map(
     ({isQuestion, text, thinking})=>({
       role: isQuestion? 'user': 'system',
-      content: isQuestion && wrapMessage(text),
+      content: isQuestion && text,
       thinking,
     })
   )
@@ -231,11 +249,11 @@ export function ask(question, answerIdx=-1) {
     merge.unshift({key: 'prequery', messages: [
       {
         role: 'user',
-        content: wrapMessage(msgs[msgs.length-1].subPrompt),
+        content: msgs[msgs.length-1].subPrompt,
       },
       {
         role: 'user',
-        content: wrapMessage(msgs[msgs.length-1].text),
+        content: msgs[msgs.length-1].text,
       },
     ]})
   }
@@ -461,6 +479,14 @@ export function useWideScreenChange() {
     window.addEventListener('resize', fn)
     return _=>window.removeEventListener('resize', fn)
   }, [])
+}
+
+export function newCustomPrompt() {
+  const {customPrompt}=store
+  const val=customPrompt.getValue()
+  val.list.unshift({title: 'Untitled', content: '', id: newUUID()})
+  val.idx=0
+  customPrompt.setValue({...val})
 }
 
 export function selectPrompt(idx) {

@@ -334,11 +334,7 @@ function SettingPanel(props) {
       <InputGroup className="mb-3">
         <InputGroup.Prepend>
           <Button variant="primary" onClick={_=>{
-            customPrompt.list.unshift({title: 'Untitled', content: ''})
-            customPrompt.idx=0
-            set_customPrompt({
-              ...customPrompt
-            })
+            _store.newCustomPrompt()
           }}>New Prompt</Button>
         </InputGroup.Prepend>
         <Form.Control
