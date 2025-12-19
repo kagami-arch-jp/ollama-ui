@@ -100,11 +100,15 @@ function loadSetting(text) {
           }
           return o
         }, {})
-        oldval.list.map(o=>{
-          if(!newval[o.id]) return;
-          Object.assign(o, newval[o.id])
-          delete newval[o.id]
-        })
+        if(!oldval.list.find(x=>x.id)) { // old type values have not `id`, replace all of them by new type values
+          oldval.list=[]
+        }else{
+          oldval.list.map(o=>{
+            if(!newval[o.id]) return;
+            Object.assign(o, newval[o.id])
+            delete newval[o.id]
+          })
+        }
         for(let id in newval) {
           oldval.list.push(newval[id])
         }
