@@ -12,9 +12,7 @@ import {Modal, ButtonGroup, OverlayTrigger, Badge, Tooltip, Alert, Nav, Row, Col
 _store.initStore()
 
 function App(props) {
-
   _store.useAutoSave()
-
   _store.useWideScreenChange()
 
   let t=Date.now()
@@ -25,21 +23,26 @@ function App(props) {
   const idx=store.activeTabIdx.useValue()
   return <>
     <StatusBar />
-    <div className='my-slider'>
-      <div className='my-slider-item' style={{
-        marginLeft: '-'+idx+'00%',
-      }}>
-        <ChatPanel />
-      </div>
-      <div className='my-slider-item'>
-        <SettingPanel />
-      </div>
-      <div className='my-slider-item'>
-        <HistoryPanel />
-      </div>
-    </div>
+    <Slider activeIdx={idx} items={[
+      <ChatPanel />,
+      <SettingPanel />,
+      <HistoryPanel />,
+    ]} />
     <Dialog />
   </>
+}
+
+function Slider(props) {
+  const {items, activeIdx}=props
+  return <div className='my-slider'>
+    {items.map((item, i)=>{
+      return <div key={i} className='my-slider-item' style={{
+        left: '-'+activeIdx+'00%',
+      }}>
+        {item}
+      </div>
+    })}
+  </div>
 }
 
 function StatusBar(props) {
@@ -420,34 +423,34 @@ function ChatPanel(props) {
 
 function HistoryPanel(props) {
   const history=store.messageHistory.useValue()
-  const historyList=React.useMemo(_=>{
-    return history.reduce((arr, h)=>arr.concat(h.messages), [])
+  return React.useMemo(_=>{
+    const historyList=history.reduce((arr, h)=>arr.concat(h.messages), [])
+    return <div className='history-panel'>
+      {
+        historyList.length?
+          <>
+            <Alert className='clear-history' variant='danger'>
+              <Button variant="danger" className="btn-sm" onClick={async _=>{
+                if(await confirmModal('Delete all histories?')) {
+                  _store.deleteHistories()
+                }
+              }}>Delete all histories.</Button>
+            </Alert>
+            <Msgbox
+              list={historyList}
+              onDelete={async (i, animation)=>{
+                if(await confirmModal('Delete this message?')) {
+                  await animation()
+                  _store.deleteHistory(historyList[i].key)
+                }
+              }}
+              isBlur={_=>!_store.isHistoryPanelActive()}
+            />
+          </>:
+          <EmptyMessage />
+      }
+    </div>
   }, [history])
-  return <div className='history-panel'>
-    {
-      historyList.length?
-        <>
-          <Alert className='clear-history' variant='danger'>
-            <Button variant="danger" className="btn-sm" onClick={async _=>{
-              if(await confirmModal('Delete all histories?')) {
-                _store.deleteHistories()
-              }
-            }}>Delete all histories.</Button>
-          </Alert>
-          <Msgbox
-            list={historyList}
-            onDelete={async (i, animation)=>{
-              if(await confirmModal('Delete this message?')) {
-                await animation()
-                _store.deleteHistory(historyList[i].key)
-              }
-            }}
-            isBlur={_=>!_store.isHistoryPanelActive()}
-          />
-        </>:
-        <EmptyMessage />
-    }
-  </div>
 }
 
 function Wrapper({children, isBlur}) {
@@ -501,7 +504,7 @@ function ExposeComponent({onVisibleChange, bindElementRef, style, rootMargin='15
     (style || {width: 1, height: 1, marginTop: -1, marginRight: -1})
   }>{children}</div>
 }
-function useLazyLoad({initCount=3, stepCount=3, initDataLength, rootMargin='1500px'}) {
+function useLazyLoad({initCount=8, stepCount=3, initDataLength, rootMargin='1500px'}) {
   const [state, set_state]=React.useState({
     showAll: false,
     showCount: initCount,
@@ -572,7 +575,6 @@ function Msgbox(props) {
         <EmptyMessage />
     }
   </div>
-
 }
 
 function MsgBoxArea(props) {
@@ -626,45 +628,47 @@ function MsgBoxArea(props) {
         </Card>
       </Accordion>
     }
-    <Msgbox
-      list={list}
-      scrollToBottomRef={scrollerRef}
-      onReload={async i=>{
-        if(await confirmModal('Reload answer?')) {
-          _store.reloadAnswer(i)
-        }
-      }}
-      onDelete={async (i, animation)=>{
-        if(await confirmModal('Delete this message?')) {
-          await animation()
-          _store.deleteMessage(i)
-        }
-      }}
-      isBlur={_=>!_store.isChatPanelActive()}
-    >
-      <center className='function-btns'>
-        <TipButton
-          hoverText={'Start a new chat'}
-          iconClassName={'new-ico bi-arrow-return-left'}
-          variant='warning'
-          disabled={isResponsing || !list.length}
-          onClick={_=>{
-            _store.newChat()
-          }}
-          showText='New chat'
-        />
-        <TipButton
-          hoverText={(hideInput? 'Show': 'Hide')+'input box'}
-          iconClassName={cls('new-ico', hideInput? "bi-arrows-fullscreen": "bi-arrows-angle-contract")}
-          variant='primary'
-          disabled={isResponsing || !list.length}
-          onClick={_=>{
-            set_hideInput(!hideInput)
-          }}
-          showText={(hideInput? 'Show': 'Hide')+' input box'}
-        />
-      </center>
-    </Msgbox>
+    {React.useMemo(_=>{
+      return <Msgbox
+        list={list}
+        scrollToBottomRef={scrollerRef}
+        onReload={async i=>{
+          if(await confirmModal('Reload answer?')) {
+            _store.reloadAnswer(i)
+          }
+        }}
+        onDelete={async (i, animation)=>{
+          if(await confirmModal('Delete this message?')) {
+            await animation()
+            _store.deleteMessage(i)
+          }
+        }}
+        isBlur={_=>!_store.isChatPanelActive()}
+      >
+        <center className='function-btns'>
+          <TipButton
+            hoverText={'Start a new chat'}
+            iconClassName={'new-ico bi-arrow-return-left'}
+            variant='warning'
+            disabled={isResponsing || !list.length}
+            onClick={_=>{
+              _store.newChat()
+            }}
+            showText='New chat'
+          />
+          <TipButton
+            hoverText={(hideInput? 'Show': 'Hide')+'input box'}
+            iconClassName={cls('new-ico', hideInput? "bi-arrows-fullscreen": "bi-arrows-angle-contract")}
+            variant='primary'
+            disabled={isResponsing || !list.length}
+            onClick={_=>{
+              set_hideInput(!hideInput)
+            }}
+            showText={(hideInput? 'Show': 'Hide')+' input box'}
+          />
+        </center>
+      </Msgbox>
+    }, [messages])}
   </div>
 
 }
