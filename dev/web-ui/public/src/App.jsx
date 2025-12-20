@@ -628,47 +628,45 @@ function MsgBoxArea(props) {
         </Card>
       </Accordion>
     }
-    {React.useMemo(_=>{
-      return <Msgbox
-        list={list}
-        scrollToBottomRef={scrollerRef}
-        onReload={async i=>{
-          if(await confirmModal('Reload answer?')) {
-            _store.reloadAnswer(i)
-          }
-        }}
-        onDelete={async (i, animation)=>{
-          if(await confirmModal('Delete this message?')) {
-            await animation()
-            _store.deleteMessage(i)
-          }
-        }}
-        isBlur={_=>!_store.isChatPanelActive()}
-      >
-        <center className='function-btns'>
-          <TipButton
-            hoverText={'Start a new chat'}
-            iconClassName={'new-ico bi-arrow-return-left'}
-            variant='warning'
-            disabled={isResponsing || !list.length}
-            onClick={_=>{
-              _store.newChat()
-            }}
-            showText='New chat'
-          />
-          <TipButton
-            hoverText={(hideInput? 'Show': 'Hide')+'input box'}
-            iconClassName={cls('new-ico', hideInput? "bi-arrows-fullscreen": "bi-arrows-angle-contract")}
-            variant='primary'
-            disabled={isResponsing || !list.length}
-            onClick={_=>{
-              set_hideInput(!hideInput)
-            }}
-            showText={(hideInput? 'Show': 'Hide')+' input box'}
-          />
-        </center>
-      </Msgbox>
-    }, [messages])}
+    <Msgbox
+      list={list}
+      scrollToBottomRef={scrollerRef}
+      onReload={async i=>{
+        if(await confirmModal('Reload answer?')) {
+          _store.reloadAnswer(i)
+        }
+      }}
+      onDelete={async (i, animation)=>{
+        if(await confirmModal('Delete this message?')) {
+          await animation()
+          _store.deleteMessage(i)
+        }
+      }}
+      isBlur={_=>!_store.isChatPanelActive()}
+    >
+      <center className='function-btns'>
+        <TipButton
+          hoverText={'Start a new chat'}
+          iconClassName={'new-ico bi-arrow-return-left'}
+          variant='warning'
+          disabled={isResponsing || !list.length}
+          onClick={_=>{
+            _store.newChat()
+          }}
+          showText='New chat'
+        />
+        <TipButton
+          hoverText={(hideInput? 'Show': 'Hide')+'input box'}
+          iconClassName={cls('new-ico', hideInput? "bi-arrows-fullscreen": "bi-arrows-angle-contract")}
+          variant='primary'
+          disabled={isResponsing || !list.length}
+          onClick={_=>{
+            set_hideInput(!hideInput)
+          }}
+          showText={(hideInput? 'Show': 'Hide')+' input box'}
+        />
+      </center>
+    </Msgbox>
   </div>
 
 }
