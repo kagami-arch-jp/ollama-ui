@@ -70,7 +70,15 @@ export function loadConfig() {
     store.enterSend.setValue(enterSend)
     store.multiLineInput.setValue(multiLineInput)
 
-  }catch(e) {}
+    if(!customPrompt.list.length || !prompt.value) throw new Error('no initial value')
+
+    if(window.version!==localStorage.CONFIG_VERSION) throw new Error('settings outdated')
+
+  }catch(e) {
+    _store.importDefaultSetting(true).then(_=>{
+      localStorage.CONFIG_VERSION=window.version
+    })
+  }
 }
 
 export function saveConfig() {

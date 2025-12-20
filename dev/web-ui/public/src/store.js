@@ -88,7 +88,7 @@ export function exportSetting() {
   URL.revokeObjectURL(_url)
 }
 
-function loadSetting(text) {
+function loadSetting(text, slient) {
   try {
     const s=JSON.parse(decodeURIComponent(text))
     for(const k in s) {
@@ -116,10 +116,10 @@ function loadSetting(text) {
       }
       store[k]?.setValue(s[k])
     }
-    alertModal('Import config successful!')
+    slient || alertModal('Import config successful!')
   }catch(e) {
     console.log(e)
-    alertModal(<>
+    slient || alertModal(<>
       <div>Failed to load config:</div>
       <pre>{e.stack}</pre>
     </>)
@@ -139,9 +139,9 @@ function alertModal(msg) {
   })
 }
 
-export async function importDefaultSetting() {
+export async function importDefaultSetting(slient) {
   const f=await fetch('https://raw.githubusercontent.com/kagami-arch-jp/ollama-ui/refs/heads/main/dist/setting.txt')
-  loadSetting(await f.text())
+  loadSetting(await f.text(), slient)
 }
 
 export function importSetting() {

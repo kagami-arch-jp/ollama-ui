@@ -25,10 +25,10 @@ function App(props) {
   const idx=store.activeTabIdx.useValue()
   return <>
     <StatusBar />
-    <div className='my-slider' style={{
-      transform: 'translateX(-'+idx+'00%)',
-    }}>
-      <div className='my-slider-item'>
+    <div className='my-slider'>
+      <div className='my-slider-item' style={{
+        marginLeft: '-'+idx+'00%',
+      }}>
         <ChatPanel />
       </div>
       <div className='my-slider-item'>

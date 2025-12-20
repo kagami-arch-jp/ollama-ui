@@ -65,6 +65,8 @@ if(localStorage.BUNDLE_JS_VERSION!==version) {
 <?js }else{ ?>
 <script type="text/javascript">
 
+const version='dev';
+
 function loadJS(type, {text, src}) {
   const newScript=document.createElement('script')
   newScript.type=type
