@@ -399,13 +399,6 @@ function SettingPanel(props) {
       <Button className='btn-sm' variant="info" onClick={_=>{
         _store.importSetting()
       }}>Import setting</Button>
-      <OverlayTrigger overlay={<Tooltip id="tooltip-setting-btn">Load setting from github.</Tooltip>}>
-        <Button className='btn-sm' variant="danger" onClick={async _=>{
-          if(await confirmModal('Override settings?')) {
-            _store.importDefaultSetting()
-          }
-        }}>Import default setting</Button>
-      </OverlayTrigger>
     </div>
   </Form>
 }
