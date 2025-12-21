@@ -36,7 +36,7 @@ function Slider(props) {
   const {items, activeIdx}=props
   return <div className='my-slider'>
     {items.map((item, i)=>{
-      return <div key={i} className='my-slider-item' style={{
+      return <div key={i} className={cls('my-slider-item', i!==activeIdx && 'blur')} style={{
         left: '-'+activeIdx+'00%',
       }}>
         {item}
