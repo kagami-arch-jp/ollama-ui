@@ -241,10 +241,10 @@ export function ask(question, answerIdx=-1) {
 
   const msgs=resolveHistory(history, sendWithHistory)
 
-  const messagesParam=msgs.map(
+  const messagesParam=msgs.filter(x=>!x.ignore).map(
     ({isQuestion, text, thinking})=>({
       role: isQuestion? 'user': 'system',
-      content: isQuestion && text,
+      content: text,
       thinking,
     })
   )
@@ -345,10 +345,20 @@ export function getPresetPrompt(returnRealtime, customPromptHandler) {
 }
 
 function isTaskPrompt(customPrompt) {
-  return customPrompt.indexOf('@CLEARALL()')>-1
+  return customPrompt.indexOf('@CLEARALL()')>-1 ||
+    customPrompt.indexOf('@WRAP_QUESTION()')>-1
 }
 
-function parseCustomPrompt(customPrompt, history) {
+function parseCustomPrompt(customPrompt, history, question) {
+  function replace_use(str) {
+    return str.replace(/@USE\((\$0|\d+)\)/g, (_, n)=>{
+      if(n==='$0') {
+        question.ignore=true
+        return question.text
+      }
+      return history[n-1].text
+    })
+  }
   if(!isTaskPrompt(customPrompt)) {
     return {
       prompt: customPrompt,
@@ -356,21 +366,23 @@ function parseCustomPrompt(customPrompt, history) {
     }
   }
   const ret={prompt: null, subPrompt: null, history, isHead: true}
-  customPrompt.replace(/@(HEAD|REPLACE_HEAD|SUB_TASK_BEFORE)\(\):([\s\S]+?)(?=@(HEAD|REPLACE_HEAD|SUB_TASK_BEFORE)|$)/g, (_, type, str)=>{
+  customPrompt.replace(/@(HEAD|REPLACE_HEAD|SUB_TASK_BEFORE|WRAP_QUESTION)\(\):([\s\S]+?)(?=@(HEAD|REPLACE_HEAD|SUB_TASK_BEFORE|WRAP_QUESTION)|$)/g, (_, type, str)=>{
     if(history.length===0) {
       if(type==='HEAD') {
         ret.prompt=str
       }
     }else{
       if(type==='REPLACE_HEAD') {
-        ret.prompt=str.replace(/@USE\((\d+)\)/g, (_, n)=>{
-          return history[n-1].text
-        })
+        ret.prompt=replace_use(str)
         ret.history=history.slice(2)
         ret.isHead=false
       }else if(type==='SUB_TASK_BEFORE') {
         ret.subPrompt=str
         ret.isHead=false
+      }else if(type==='WRAP_QUESTION') {
+        ret.isHead=true
+        ret.prompt=replace_use(str)
+        ret.history=[]
       }
     }
   })
@@ -381,7 +393,7 @@ export function resolveHistory(history, sendWithHistory) {
   const msgs=[]
   const ques=history.pop()
   const headPrompt=getPresetPrompt(true, customPrompt=>{
-    const t=parseCustomPrompt(customPrompt, history)
+    const t=parseCustomPrompt(customPrompt, history, ques)
     history=t.history
     if(!t.isHead && t.subPrompt) {
       ques.subPrompt=getPresetPrompt(true, _=>t.subPrompt)
