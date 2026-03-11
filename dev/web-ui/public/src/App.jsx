@@ -6,7 +6,7 @@ import {store} from './store'
 import * as _store from './store'
 import * as api from './api'
 import {cls, isLocalServer, markdown} from '/utils'
-
+import {LazyList} from 'react-lazyload-list'
 import {Modal, ButtonGroup, OverlayTrigger, Badge, Tooltip, Alert, Nav, Row, Col, Form, Button, InputGroup, FormControl, Tab, Accordion, Card, Spinner} from 'react-bootstrap'
 
 _store.initStore()
@@ -453,6 +453,40 @@ function HistoryPanel(props) {
   }, [history])
 }
 
+function Msgbox(props) {
+  const {
+    list,
+    scrollToBottomRef,
+
+    onReload,
+    onDelete,
+    isBlur,
+
+    children,
+  }=props
+  return list.length?
+    <LazyList
+      beginFromBottom={true}
+      bindScrollToBottomFunc={func=>{
+        if(scrollToBottomRef) {
+          scrollToBottomRef.current=func
+        }
+      }}
+      items={
+        list.map((msg, i)=>{
+          return <Msg {...{
+            msg,
+            onReload: onReload? ((...a)=>onReload(i, ...a)): null,
+            onDelete: onDelete? ((...a)=>onDelete(i, ...a)): null,
+          }}/>
+        })
+      }
+      className='msgbox'
+    />:
+    <EmptyMessage />
+}
+
+/*
 function Wrapper({children, isBlur}) {
   const divRef=React.useRef(null)
   const [height, set_height]=React.useState(-1)
@@ -467,6 +501,11 @@ function Wrapper({children, isBlur}) {
       if(isBlur?.()) return;
       set_show(isShow)
     }}
+    onContentChange={_=>{
+      if(show) {
+        set_height(divRef.current.offsetHeight)
+      }
+    }}
     style={(show || height<0)? null: {width: 1, height}}
     children={show? children: null}
     bindElementRef={div=>{
@@ -474,7 +513,7 @@ function Wrapper({children, isBlur}) {
     }}
   />
 }
-function ExposeComponent({onVisibleChange, bindElementRef, style, rootMargin='1500px', children=null}) {
+function ExposeComponent({onVisibleChange, onContentChange, bindElementRef, style, rootMargin='1500px', children=null}) {
   const elementRef=React.useRef(null)
   React.useEffect(() => {
     if (elementRef.current) {
@@ -484,14 +523,30 @@ function ExposeComponent({onVisibleChange, bindElementRef, style, rootMargin='15
         },
         {
           root: elementRef.current.parentNode,
-          threshold: 0.1,
+          threshold: 0,
           rootMargin,
         }
       );
       observer.observe(elementRef.current);
+
+      const mobserver = new MutationObserver(
+        function mutationCallback(mutationsList, observer) {
+          for (const mutation of mutationsList) {
+            if (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0) {
+              onContentChange?.()
+            }
+          }
+        }
+      );
+      mobserver.observe(elementRef.current, {
+        childList: true,
+        subtree: true,
+      });
+
       return () => {
         if (elementRef.current) {
           observer.unobserve(elementRef.current);
+          mobserver.unobserve(elementRef.current)
         }
       };
     }
@@ -576,6 +631,8 @@ function Msgbox(props) {
     }
   </div>
 }
+*/
+
 
 function MsgBoxArea(props) {
   const systemPrompt=_store.getPresetPrompt(false)
@@ -592,42 +649,64 @@ function MsgBoxArea(props) {
 
   const [customPrompt, set_customPrompt]=store.customPrompt.use()
   return <div className='chat-messages'>
-    {
-      systemPrompt && <Accordion className='preset-card'>
-        <Card>
-          <Card.Header>
-          <ButtonGroup aria-label="Basic example">
-            <Accordion.Toggle className='preset-prompt-btn btn-sm' as={Button} eventKey="preset-prompt">
-              <i className="bi bi-info-circle-fill"></i>
-              Prompt
-            </Accordion.Toggle>
-            <Form.Control
-              as="select"
-              size='sm'
-              custom
-              className='btn'
-              value={customPrompt.enable? customPrompt.idx: -1}
-              onChange={e=>{
-                _store.selectPrompt(e.target.value)
-              }}
-            >
-              <option value={-1}>- Disabled -</option>
-              {
-                customPrompt.list.map((t, idx)=>{
-                  return <option value={idx}>{t.title}</option>
-                })
-              }
-            </Form.Control>
-            </ButtonGroup>
-          </Card.Header>
-          <Accordion.Collapse eventKey="preset-prompt">
-            <Alert variant='info' className='preset-prompt'>
-              <pre>{systemPrompt}</pre>
-            </Alert>
-          </Accordion.Collapse>
-        </Card>
-      </Accordion>
-    }
+    {systemPrompt && <Accordion className='preset-card'>
+      <Card>
+        <Card.Header>
+        <ButtonGroup aria-label="Basic example">
+          <Accordion.Toggle className='preset-prompt-btn btn-sm' as={Button} eventKey="preset-prompt">
+            <i className="bi bi-info-circle-fill"></i>
+            Prompt
+          </Accordion.Toggle>
+          <Form.Control
+            as="select"
+            size='sm'
+            custom
+            className='btn'
+            value={customPrompt.enable? customPrompt.idx: -1}
+            onChange={e=>{
+              _store.selectPrompt(e.target.value)
+            }}
+          >
+            <option value={-1}>- Disabled -</option>
+            {
+              customPrompt.list.map((t, idx)=>{
+                return <option value={idx}>{t.title}</option>
+              })
+            }
+          </Form.Control>
+          </ButtonGroup>
+        </Card.Header>
+        <Accordion.Collapse eventKey="preset-prompt">
+          <Alert variant='info' className='preset-prompt'>
+            <pre>{systemPrompt}</pre>
+          </Alert>
+        </Accordion.Collapse>
+      </Card>
+    </Accordion>}
+
+    <center className='function-btns'>
+      <TipButton
+        hoverText={'Start a new chat'}
+        iconClassName={'new-ico bi-arrow-return-left'}
+        variant='warning'
+        disabled={isResponsing || !list.length}
+        onClick={_=>{
+          _store.newChat()
+        }}
+        showText='New chat'
+      />
+      <TipButton
+        hoverText={(hideInput? 'Show': 'Hide')+'input box'}
+        iconClassName={cls('new-ico', hideInput? "bi-arrows-fullscreen": "bi-arrows-angle-contract")}
+        variant='primary'
+        disabled={isResponsing || !list.length}
+        onClick={_=>{
+          set_hideInput(!hideInput)
+        }}
+        showText={(hideInput? 'Show': 'Hide')+' input box'}
+      />
+    </center>
+
     <Msgbox
       list={list}
       scrollToBottomRef={scrollerRef}
@@ -643,30 +722,7 @@ function MsgBoxArea(props) {
         }
       }}
       isBlur={_=>!_store.isChatPanelActive()}
-    >
-      <center className='function-btns'>
-        <TipButton
-          hoverText={'Start a new chat'}
-          iconClassName={'new-ico bi-arrow-return-left'}
-          variant='warning'
-          disabled={isResponsing || !list.length}
-          onClick={_=>{
-            _store.newChat()
-          }}
-          showText='New chat'
-        />
-        <TipButton
-          hoverText={(hideInput? 'Show': 'Hide')+'input box'}
-          iconClassName={cls('new-ico', hideInput? "bi-arrows-fullscreen": "bi-arrows-angle-contract")}
-          variant='primary'
-          disabled={isResponsing || !list.length}
-          onClick={_=>{
-            set_hideInput(!hideInput)
-          }}
-          showText={(hideInput? 'Show': 'Hide')+' input box'}
-        />
-      </center>
-    </Msgbox>
+    />
   </div>
 
 }
@@ -710,10 +766,11 @@ function Msg(props) {
 
     isPending,
     isError,
+    showSource,
   }=msg
 
   const divRef=React.useRef(null)
-  const [plain, set_plain]=React.useState(false)
+  const [plain, set_plain]=React.useState(showSource)
   return <div key={key} ref={divRef} class={cls(
     'text',
     isQuestion? 'question': 'answer',
@@ -739,6 +796,8 @@ function Msg(props) {
             checked={plain}
             onChange={e=>{
               set_plain(e.target.checked)
+              msg.showSource=e.target.checked
+              api.saveMessages()
             }}
           />
         }

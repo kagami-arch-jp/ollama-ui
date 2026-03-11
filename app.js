@@ -14,6 +14,8 @@ require('./dist/local-asset/_npm_marked@16.4.1_lib_marked.umd.js');
 require('./dist/local-asset/_npm_react-bootstrap@1.6.8_dist_react-bootstrap.min.js');
 require('./dist/local-asset/_npm_react-cross-component-state@1.0.2_index.umd.js');
 require('./dist/local-asset/_npm_react-dom@18.2.0_umd_react-dom.production.min.js');
+require('./dist/local-asset/_npm_react-lazyload-list@1.0.0_index.umd.js');
+require('./dist/local-asset/_npm_react-lazyload-list@1.0.1_index.umd.js');
 require('./dist/local-asset/_npm_react-virtualized@9.22.6_dist_umd_react-virtualized.js');
 require('./dist/local-asset/_npm_react-virtualized@9.22.6_styles.css');
 require('./dist/local-asset/_npm_react-virtualized_dist_umd_react-virtualized.js');

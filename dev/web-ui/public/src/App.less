@@ -299,6 +299,10 @@ html, body{
         margin-top: 10px;
         display: flex;
         flex-direction: column;
+        position: relative;
+        .msgbox{
+          padding-bottom: 30px;
+        }
       }
       .input-area{
         align-items: flex-end;
@@ -375,6 +379,17 @@ html, body{
         margin-right: 6px;
       }
     }
+    .function-btns{
+      position: absolute;
+      bottom: 5px;
+      left: 0;
+      z-index: 10;
+      text-align: center;
+      width: 100%;
+      .btn{
+        margin: 0 5px;
+      }
+    }
     .msgbox{
       margin: 5px 0;
       height: 100%;
@@ -385,15 +400,6 @@ html, body{
         .btn{
           margin: 0 3px;
           border-radius: 100%;
-        }
-      }
-      .function-btns{
-        margin-top: 10px;
-        padding-bottom: 10px;
-        position: sticky;
-        bottom: 0;
-        .btn{
-          margin: 0 5px;
         }
       }
       .new-ico{
