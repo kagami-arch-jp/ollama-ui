@@ -35,7 +35,7 @@ export const store={
     list: [],
     isResponsing: false,
   })),
-  messageHistory: createSharedState(_=>([])),
+  messageHistoryV2: createSharedState(_=>([])),
 
   sendWithHistory: createSharedState(false),
   enterSend: createSharedState(true),
@@ -248,42 +248,24 @@ export function ask(question, answerIdx=-1) {
       thinking,
     })
   )
-  const merge=[{messages: messagesParam}]
-  if(msgs[msgs.length-1].subPrompt) {
-    merge.unshift({key: 'prequery', messages: [
-      {
-        role: 'user',
-        content: msgs[msgs.length-1].subPrompt,
-      },
-      {
-        role: 'user',
-        content: msgs[msgs.length-1].text,
-      },
-    ]})
-  }
-  api.chatMerge(merge, (e, isEnd, ret, key)=>{
+
+  api.chat(messagesParam, (e, isEnd, ret)=>{
     if(patch.isEnd) return;
 
     const {content, thinking}=JSON.parse(ret || '{}')
 
-    if(key) {
-      ans.subdata[key]=ans.subdata[key] || newMsg()
-    }
+    if(content) ans.text+=content
+    else if(thinking) ans.thinking+=thinking
 
-    const getAns=_=>key? ans.subdata[key]: ans
-
-    if(content) getAns().text+=content
-    else if(thinking) getAns().thinking+=thinking
-
-    const err=e || (isEnd && !getAns().text? new Error('Unknown error'): null)
+    const err=e || (isEnd && !ans.text? new Error('Unknown error'): null)
     if(err) {
-      getAns().text+='\n### '+err.message
-      getAns().isError=true
+      ans.text+='\n### '+err.message
+      ans.isError=true
     }else if(content) {
-      const [realEnd, text]=patch.text(getAns().text)
+      const [realEnd, text]=patch.text(ans.text)
       if(realEnd) {
         isEnd=true
-        getAns().text=text
+        ans.text=text
       }
     }
 
@@ -331,78 +313,22 @@ export function selectModel(idx) {
   store.model.setValue({...model})
 }
 
-export function getPresetPrompt(returnRealtime, customPromptHandler) {
+export function getPresetPrompt(returnRealtime) {
   const now=(new Date).toLocaleString()
   const day='日月火水木金土'.charAt((new Date).getDay())+'曜日'
   const systemPrompt=store.prompt.getValue()
   const customPrompt=store.customPrompt.getValue()
-  customPromptHandler=customPromptHandler || (x=>x)
   return [
     returnRealtime && `今は「${now}」です。今日は「${day}」です。`,
     systemPrompt.enable && systemPrompt.value,
-    customPrompt.enable && customPromptHandler(customPrompt.list[customPrompt.idx].content),
+    customPrompt.enable && customPrompt.list[customPrompt.idx].content,
   ].filter(Boolean).join('\n')
-}
-
-function isTaskPrompt(customPrompt) {
-  return customPrompt.indexOf('@CLEARALL()')>-1 ||
-    customPrompt.indexOf('@WRAP_QUESTION()')>-1
-}
-
-function parseCustomPrompt(customPrompt, history, question) {
-  function replace_use(str) {
-    return str.replace(/@USE\((\$0|\d+)\)/g, (_, n)=>{
-      if(n==='$0') {
-        question.ignore=true
-        return question.text
-      }
-      return history[n-1].text
-    })
-  }
-  if(!isTaskPrompt(customPrompt)) {
-    return {
-      prompt: customPrompt,
-      history,
-    }
-  }
-  const ret={prompt: null, subPrompt: null, history, isHead: true}
-  customPrompt.replace(/@(HEAD|REPLACE_HEAD|SUB_TASK_BEFORE|WRAP_QUESTION)\(\):([\s\S]+?)(?=@(HEAD|REPLACE_HEAD|SUB_TASK_BEFORE|WRAP_QUESTION)|$)/g, (_, type, str)=>{
-    if(history.length===0) {
-      if(type==='HEAD') {
-        ret.prompt=str
-      }
-    }else{
-      if(type==='REPLACE_HEAD') {
-        ret.prompt=replace_use(str)
-        ret.history=history.slice(2)
-        ret.isHead=false
-      }else if(type==='SUB_TASK_BEFORE') {
-        ret.subPrompt=str
-        ret.isHead=false
-      }else if(type==='WRAP_QUESTION') {
-        ret.isHead=true
-        ret.prompt=replace_use(str)
-        ret.history=[]
-      }
-    }
-  })
-  return ret
 }
 
 export function resolveHistory(history, sendWithHistory) {
   const msgs=[]
   const ques=history.pop()
-  const headPrompt=getPresetPrompt(true, customPrompt=>{
-    const t=parseCustomPrompt(customPrompt, history, ques)
-    history=t.history
-    if(!t.isHead && t.subPrompt) {
-      ques.subPrompt=getPresetPrompt(true, _=>t.subPrompt)
-    }else{
-      ques.subPrompt=''
-    }
-    return t.prompt
-  })
-  msgs.push({isQuestion: true, text: headPrompt})
+  msgs.push({isQuestion: true, text: getPresetPrompt(true)})
   if(sendWithHistory) {
     msgs.push(...history, ques)
   }else{
@@ -413,13 +339,8 @@ export function resolveHistory(history, sendWithHistory) {
 
 export function newChat() {
   const messages=store.messages.getValue()
-  const messageHistory=store.messageHistory.getValue()
-  store.messageHistory.setValue([...messageHistory, {
-    messages: messages.list,
-    sendWithHistory: store.sendWithHistory.getValue(),
-    enterSend: store.enterSend.getValue(),
-    multiLineInput: store.multiLineInput.getValue(),
-  }])
+  let messageHistoryV2=store.messageHistoryV2.getValue()
+  store.messageHistoryV2.setValue([...messageHistoryV2, ...messages.list])
   store.messages.setValue({
     ...messages,
     list: [],
@@ -436,23 +357,18 @@ export function deleteMessage(i) {
 }
 
 export function useHistoryCount() {
-  const messageHistory=store.messageHistory.useValue()
-  return messageHistory.reduce((n, h)=>{
-    return n+h.messages.length
-  }, 0)
+  const messageHistoryV2=store.messageHistoryV2.useValue()
+  return messageHistoryV2.length
 }
 
 export function deleteHistory(key) {
-  let messageHistory=store.messageHistory.getValue()
-  for(const {messages} of messageHistory) {
-    for(let i=0; i<messages.length; i++) {
-      if(messages[i].key!==key) continue
-      messages.splice(i, 1)
-      break
-    }
+  let messageHistoryV2=store.messageHistoryV2.getValue()
+  for(let i=0; i<messageHistoryV2.length; i++) {
+    if(messageHistoryV2[i].key!==key) continue
+    messageHistoryV2.splice(i, 1)
+    break
   }
-  messageHistory=messageHistory.filter(x=>x.messages.length)
-  store.messageHistory.setValue([...messageHistory])
+  store.messageHistoryV2.setValue([...messageHistoryV2])
   api.saveMessages()
 }
 
@@ -472,7 +388,7 @@ export function useAutoSave() {
 }
 
 export function deleteHistories() {
-  store.messageHistory.setValue([])
+  store.messageHistoryV2.setValue([])
   api.saveMessages()
 }
 
@@ -516,12 +432,4 @@ export function selectPrompt(idx) {
     val.enable=true
   }
   customPrompt.setValue({...val})
-}
-
-export function isChatPanelActive() {
-  return store.activeTabIdx.getValue()===0
-}
-
-export function isHistoryPanelActive() {
-  return store.activeTabIdx.getValue()===2
 }

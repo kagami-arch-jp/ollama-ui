@@ -422,35 +422,31 @@ function ChatPanel(props) {
 }
 
 function HistoryPanel(props) {
-  const history=store.messageHistory.useValue()
-  return React.useMemo(_=>{
-    const historyList=history.reduce((arr, h)=>arr.concat(h.messages), [])
-    return <div className='history-panel'>
-      {
-        historyList.length?
-          <>
-            <Alert className='clear-history' variant='danger'>
-              <Button variant="danger" className="btn-sm" onClick={async _=>{
-                if(await confirmModal('Delete all histories?')) {
-                  _store.deleteHistories()
-                }
-              }}>Delete all histories.</Button>
-            </Alert>
-            <Msgbox
-              list={historyList}
-              onDelete={async (i, animation)=>{
-                if(await confirmModal('Delete this message?')) {
-                  await animation()
-                  _store.deleteHistory(historyList[i].key)
-                }
-              }}
-              isBlur={_=>!_store.isHistoryPanelActive()}
-            />
-          </>:
-          <EmptyMessage />
-      }
-    </div>
-  }, [history])
+  const historyList=store.messageHistoryV2.useValue()
+  return <div className='history-panel'>
+    {
+      historyList.length?
+        <>
+          <Alert className='clear-history' variant='danger'>
+            <Button variant="danger" className="btn-sm" onClick={async _=>{
+              if(await confirmModal('Delete all histories?')) {
+                _store.deleteHistories()
+              }
+            }}>Delete all histories.</Button>
+          </Alert>
+          <Msgbox
+            list={historyList}
+            onDelete={async (i, animation)=>{
+              if(await confirmModal('Delete this message?')) {
+                await animation()
+                _store.deleteHistory(historyList[i].key)
+              }
+            }}
+          />
+        </>:
+        <EmptyMessage />
+    }
+  </div>
 }
 
 function Msgbox(props) {
@@ -460,7 +456,6 @@ function Msgbox(props) {
 
     onReload,
     onDelete,
-    isBlur,
 
     children,
   }=props
@@ -485,154 +480,6 @@ function Msgbox(props) {
     />:
     <EmptyMessage />
 }
-
-/*
-function Wrapper({children, isBlur}) {
-  const divRef=React.useRef(null)
-  const [height, set_height]=React.useState(-1)
-  const [show, set_show]=React.useState(true)
-  return <ExposeComponent
-    rootMargin='500px'
-    onVisibleChange={isShow=>{
-      if(!divRef.current) return;
-      if(!isShow) {
-        set_height(divRef.current.offsetHeight)
-      }
-      if(isBlur?.()) return;
-      set_show(isShow)
-    }}
-    onContentChange={_=>{
-      if(show) {
-        set_height(divRef.current.offsetHeight)
-      }
-    }}
-    style={(show || height<0)? null: {width: 1, height}}
-    children={show? children: null}
-    bindElementRef={div=>{
-      divRef.current=div
-    }}
-  />
-}
-function ExposeComponent({onVisibleChange, onContentChange, bindElementRef, style, rootMargin='1500px', children=null}) {
-  const elementRef=React.useRef(null)
-  React.useEffect(() => {
-    if (elementRef.current) {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          onVisibleChange(entry.isIntersecting)
-        },
-        {
-          root: elementRef.current.parentNode,
-          threshold: 0,
-          rootMargin,
-        }
-      );
-      observer.observe(elementRef.current);
-
-      const mobserver = new MutationObserver(
-        function mutationCallback(mutationsList, observer) {
-          for (const mutation of mutationsList) {
-            if (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0) {
-              onContentChange?.()
-            }
-          }
-        }
-      );
-      mobserver.observe(elementRef.current, {
-        childList: true,
-        subtree: true,
-      });
-
-      return () => {
-        if (elementRef.current) {
-          observer.unobserve(elementRef.current);
-          mobserver.unobserve(elementRef.current)
-        }
-      };
-    }
-  }, []);
-  return <div ref={div=>{
-    elementRef.current=div
-    if(bindElementRef) bindElementRef(div)
-  }} style={children?
-    null:
-    (style || {width: 1, height: 1, marginTop: -1, marginRight: -1})
-  }>{children}</div>
-}
-function useLazyLoad({initCount=8, stepCount=3, initDataLength, rootMargin='1500px'}) {
-  const [state, set_state]=React.useState({
-    showAll: false,
-    showCount: initCount,
-    initDataLength,
-  })
-
-  return [
-    state.showCount,
-    state.showAll? null: <ExposeComponent
-      key={state.showCount+'/'+state.initDataLength}
-      rootMargin={rootMargin}
-      onVisibleChange={isShow=>{
-        if(!isShow) return;
-        state.showCount+=stepCount
-        if(state.showCount>=state.initDataLength) {
-          state.showAll=true
-        }
-        set_state({...state})
-      }}
-    />,
-  ]
-}
-
-function Msgbox(props) {
-  const {
-    list,
-    scrollToBottomRef,
-
-    onReload,
-    onDelete,
-    isBlur,
-
-    children,
-  }=props
-
-  const boxRef=React.useRef(null)
-  const [showCount, LazyLoadComponent]=useLazyLoad({
-    initDataLength: list.length,
-  })
-  function scroll() {
-    boxRef.current.scrollTo(0, 9e9)
-  }
-
-  React.useEffect(_=>{
-    scroll()
-    if(scrollToBottomRef) {
-      scrollToBottomRef.current=scroll
-    }
-  }, [])
-
-  return <div className='msgbox' ref={target=>{
-    boxRef.current=target
-  }}>
-    {LazyLoadComponent}
-    {
-      list.length?
-        <>
-        {list.map((msg, i)=>(i+showCount>=list.length)?
-          <Wrapper isBlur={isBlur}>
-            <Msg {...{
-              msg,
-              onReload: onReload? ((...a)=>onReload(i, ...a)): null,
-              onDelete: onDelete? ((...a)=>onDelete(i, ...a)): null,
-            }}/>
-          </Wrapper>: null)}
-          {children}
-        </>:
-        <EmptyMessage />
-    }
-  </div>
-}
-*/
-
 
 function MsgBoxArea(props) {
   const systemPrompt=_store.getPresetPrompt(false)
@@ -684,7 +531,7 @@ function MsgBoxArea(props) {
       </Card>
     </Accordion>}
 
-    <center className='function-btns'>
+    {list.length>0 && <center className='function-btns'>
       <TipButton
         hoverText={'Start a new chat'}
         iconClassName={'new-ico bi-arrow-return-left'}
@@ -705,7 +552,7 @@ function MsgBoxArea(props) {
         }}
         showText={(hideInput? 'Show': 'Hide')+' input box'}
       />
-    </center>
+    </center>}
 
     <Msgbox
       list={list}
@@ -721,7 +568,6 @@ function MsgBoxArea(props) {
           _store.deleteMessage(i)
         }
       }}
-      isBlur={_=>!_store.isChatPanelActive()}
     />
   </div>
 

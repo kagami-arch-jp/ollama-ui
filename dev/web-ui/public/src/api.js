@@ -27,20 +27,6 @@ export async function chat(messages, onData) {
   })
 }
 
-/**
- chatMerge([
-   {key: 'xx', messages: [...]},
-   {messages: [...]},
- ], ..)
- */
-export async function chatMerge(messagesGroup, onData) {
-  for(let i=0; i<messagesGroup.length; i++) {
-    const {key, messages}=messagesGroup[i]
-    const isFinal=i===messagesGroup.length-1
-    await chat(messages, (e, isEnd, ret)=>onData(e, isEnd && isFinal, ret, key))
-  }
-}
-
 export function loadConfig() {
   try{
     const [
@@ -102,14 +88,14 @@ export function loadMessages() {
   try{
     const [messages, history]=JSON.parse(localStorage.getItem('ollama-webui-state-messages'))
     store.messages.setValue(messages)
-    store.messageHistory.setValue(history)
+    store.messageHistoryV2.setValue(history)
   }catch(e) {}
 }
 
 export function saveMessages() {
   try{
     const messages=store.messages.getValue()
-    const messageHistory=store.messageHistory.getValue()
-    localStorage.setItem('ollama-webui-state-messages', JSON.stringify([messages, messageHistory]))
+    const messageHistoryV2=store.messageHistoryV2.getValue()
+    localStorage.setItem('ollama-webui-state-messages', JSON.stringify([messages, messageHistoryV2]))
   }catch(e) {}
 }
