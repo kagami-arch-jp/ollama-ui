@@ -509,6 +509,7 @@ function MsgBoxArea(props) {
             size='sm'
             custom
             className='btn'
+            disabled={isResponsing}
             value={customPrompt.enable? customPrompt.idx: -1}
             onChange={e=>{
               _store.selectPrompt(e.target.value)

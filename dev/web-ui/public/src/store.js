@@ -322,13 +322,15 @@ export function getPresetPrompt(returnRealtime) {
     returnRealtime && `今は「${now}」です。今日は「${day}」です。`,
     systemPrompt.enable && systemPrompt.value,
     customPrompt.enable && customPrompt.list[customPrompt.idx].content,
-  ].filter(Boolean).join('\n')
+  ].filter(Boolean)
 }
 
 export function resolveHistory(history, sendWithHistory) {
   const msgs=[]
   const ques=history.pop()
-  msgs.push({isQuestion: true, text: getPresetPrompt(true)})
+  getPresetPrompt(true).map(txt=>{
+    msgs.push({isQuestion: true, text: txt})
+  })
   if(sendWithHistory) {
     msgs.push(...history, ques)
   }else{
