@@ -105,4 +105,6 @@ class App{
 exports({
   callOllamaApi,
   App,
+  bindClient,
+  unbindClient,
 })
