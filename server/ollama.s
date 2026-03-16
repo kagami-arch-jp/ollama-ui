@@ -2,12 +2,14 @@
 
 const {default: ollama, Ollama}=require('ollama');
 
-const apiKey=$_RAW_REQUEST.headers['x-ollama-apikey'] || $_QUERY.apikey
+const OLLAMA_API_KEY=$_RAW_REQUEST.headers['x-ollama-apikey'] || $_QUERY.apikey || process.env.OLLAMA_API_KEY
 
 // ------------------------------------------------------------
 // Ollama API 呼び出しラッパー
 // ------------------------------------------------------------
-async function callOllamaApi(apiMethod, { onClient, onData, onEnd, query } = {}) {
+async function callOllamaApi(apiMethod, { apiKey, onClient, onData, onEnd, query } = {}) {
+  apiKey=apiKey || OLLAMA_API_KEY
+
   // API キーがあれば認証付きクライアント、無ければデフォルトクライアント
   const client = apiKey
     ? new Ollama({
@@ -16,21 +18,25 @@ async function callOllamaApi(apiMethod, { onClient, onData, onEnd, query } = {})
       })
     : ollama;
 
-  const response = await client[apiMethod](query);
+  try{
+    const response = await client[apiMethod](query);
 
-  // onData が無い場合は単なる結果オブジェクトを返す
-  if (!onData) return response;
+    // onData が無い場合は単なる結果オブジェクトを返す
+    if (!onData) return response;
 
-  onClient && onClient(client)
+    onClient && onClient(client)
 
-  // ストリーミング結果をコールバックで流す
-  try {
-    for await (const part of response) {
-      onData(null, false, part);
+    // ストリーミング結果をコールバックで流す
+    try {
+      for await (const part of response) {
+        onData(null, false, part);
+      }
+      onData(null, true, null);
+    } catch (e) {
+      throw e
     }
-    onData(null, true, null);
-  } catch (err) {
-    onData(err, true, null);
+  }catch(e) {
+    onData(e, true, null);
   }
 
   onEnd && onEnd(client)

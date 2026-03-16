@@ -1,7 +1,8 @@
 <?js
 
 const {callOllamaApi, bindClient, unbindClient}=include('../../server/ollama.s')
-const MODEL_NAME='gemma3n:e4b-it-fp16'
+
+const DEFAULT_LOCAL_MODEL_NAME='gemma3n:e4b-it-fp16'
 
 const AFTER_TPL=`
 # Continuing the **content snippet**
@@ -41,7 +42,9 @@ if($_QUERY.a) Sync.Push(async ()=>{
   const {a}=$_QUERY
 
   if(a==='choices') {
-    const {txt, queryType, role} = JSON.parse(await Utils.rs2Buffer($_RAW_REQUEST));
+    const {param, config} = JSON.parse(await Utils.rs2Buffer($_RAW_REQUEST));
+    const {txt, queryType, role} = param
+    const {apiKey, modelName}=config
 
     if(!txt) return;
 
@@ -63,14 +66,15 @@ if($_QUERY.a) Sync.Push(async ()=>{
     ].filter(x=>x.content)
     console.log(msg)
 
-    echo('x'.repeat(4096)+'\n')
+    echo('x'.repeat(4096))
     flush()
 
     let res='', think=true
     await callOllamaApi('chat', {
+      apiKey,
       query: {
         stream: true,
-        model: MODEL_NAME,
+        model: modelName || DEFAULT_LOCAL_MODEL_NAME,
         messages: msg,
         options: { temperature: 0.1, num_ctx: 1024*32 },
       },
@@ -83,6 +87,7 @@ if($_QUERY.a) Sync.Push(async ()=>{
       onData: (err, isEnd, part) => {
         if (err) {
           console.log({ err: err.message });
+          echo('Error: '+err.message)
         } else if (part) {
           const { content, thinking } = part.message;
           if(thinking) {
@@ -100,8 +105,6 @@ if($_QUERY.a) Sync.Push(async ()=>{
         }
       },
     })
-    // echo(res.replace(/^\s*(`{3})|(`{3}\s*)$/g, '').trim())
-
   }else if(a==='reset') {
     unbindClient()
   }
@@ -134,90 +137,115 @@ textarea{
   padding: 5px;
 }
 
-.layout {
+.container {
   display: flex;
   height: 100vh;
   width: 100%;
   box-sizing: border-box;
-  padding: 5px;
 }
 
-/* 左側 60% */
 .left {
   flex: 0 0 60%;
-  display: flex;
-  padding-right: 5px;
+  padding: 8px;
 }
 
-/* 右側 40% */
 .right {
   display: flex;
   flex-direction: column;
+  padding: 8px;
+  padding-left: 0;
   width: 100%;
 }
 
-/* 共通 textarea の外観 */
+/* make textareas fill their containers */
 .content,
 .role {
   width: 100%;
+  height: 100%;
+  resize: none;
+  box-sizing: border-box;
+  font-size: 1rem;
+  padding: 8px;
+}
+
+/* role textarea only takes upper half */
+.role {
+  flex: 1 1 0;
+}
+
+/* choice area takes remaining space */
+.choice {
+  flex: 1 1 0;
+  overflow-y: auto;
+  margin-top: 8px;
   padding: 8px;
   border: 1px solid #ccc;
-  resize: none;
-  font-size: 1rem;
-  box-sizing: border-box;
 }
 
-/* content は左側全体を占める */
-.content {
-  flex: 1;
-}
-
-/* role は上部、比率は好きに調整 (ここでは 30% ) */
-.role {
-  height: 30%;
-}
-
-/* choice は下部、残り全体 */
-.choice {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
-  border-top: 1px solid #eee;
-}
-
-/* individual selectable option */
+/* each option */
 .option {
-  padding: 6px 4px;
-  cursor: pointer;
-  border-bottom: 1px solid #ddd;
+  padding: 4px 8px;
+  margin: 4px 0;
+  background: #f5f5f5;
   white-space: break-spaces;
-  &:hover {
-    background: #f5f5f5;
+
+  &.done{
+    cursor: pointer;
+    border-radius: 4px;
+    &:hover {
+      background: #e0e0e0;
+    }
   }
 }
 
-/* pending text */
-.pending {
-  color: #888;
-  margin-bottom: 4px;
-}
-
-.guide{
-  color: #888;
-  font-size: 16px;
-  height: 100%;
+.config-bar {
   display: flex;
   align-items: center;
-  flex-direction: column;
-  justify-content: flex-start;
-  font-family: math;
+  padding: 12px 16px;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  gap: 16px;
+  font-family: Arial, sans-serif;
+  flex-wrap: wrap;
+  height: 40px;
+}
+
+.config-checkbox {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+
+  input {
+    margin-right: 6px;
+  }
+}
+
+.config-inputs {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+}
+
+.config-input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+
+  &:focus {
+    outline: none;
+    border-color: #66afe9;
+    box-shadow: 0 0 3px rgba(102, 175, 233, .6);
+  }
 }
 
 </style>
 <script type="text/babel" data-type="module" data-presets="react">
-const { useState, useRef, useEffect }=React
+const { useState, useRef, useEffect, useCallback }=React
 
-async function queryChoice(param, onData) {
+async function queryChoice(param, config, onData) {
 
   try {
     const response = await fetch('?a=choices', {
@@ -225,7 +253,7 @@ async function queryChoice(param, onData) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(param)
+      body: JSON.stringify({param, config})
     });
 
     // Network‑level error handling
@@ -262,181 +290,317 @@ async function queryChoice(param, onData) {
   }
 }
 
-function reset() {}
+/* reset helper */
+function resetState(setChoice, setLoading, setPending) {
+  setChoice([]);
+  setLoading(false);
+  setPending(false);
+}
 
-/* --------------------------------------------------------------- */
-function TextAreaWithChoices() {
-  const [content, setContent] = useState("");
-  const [role, setRole] = useState("");
-  const [choiceList, setChoiceList] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [currentQuery, setCurrentQuery] = useState(null); // 'after' | 'replace' | null
+const LOCAL_KEYS = {
+  useOnline: "config_useOnlineModel",
+  apiKey: "config_apiKey",
+  model: "config_modelName",
+};
 
-  const contentRef = useRef(null);
-  const insertPosRef = useRef(0);          // used for writeAfter
-  const replaceRangeRef = useRef(null);   // { start, end } used for writeReplace
-  const requestIdRef = useRef(0);          // to discard stale requests
-  const selectionTimerRef = useRef(null);
+function ConfigBar({onUpdate}) {
+  const [useOnline, setUseOnline] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [modelName, setModelName] = useState("");
 
-  /* ── localStorage persistence ─────────────────────── */
+  useEffect(()=>{
+    onUpdate({useOnline, apiKey, modelName})
+  }, [useOnline, apiKey, modelName])
+
+  // ----- initialize from localStorage -----
   useEffect(() => {
-    const saved = localStorage.getItem("content");
-    if (saved !== null) setContent(saved);
-    const savedRole = localStorage.getItem("role");
-    if (savedRole !== null) setRole(savedRole);
-    const savedChoice = localStorage.getItem("choice");
-    if (savedChoice !== null) setChoiceList(JSON.parse(savedChoice));
+    const storedUseOnline = localStorage.getItem(LOCAL_KEYS.useOnline);
+    const storedApiKey = localStorage.getItem(LOCAL_KEYS.apiKey);
+    const storedModel = localStorage.getItem(LOCAL_KEYS.model);
+
+    if (storedUseOnline !== null) setUseOnline(storedUseOnline === "true");
+    if (storedApiKey) setApiKey(storedApiKey);
+    if (storedModel) setModelName(storedModel);
   }, []);
 
-  useEffect(() => localStorage.setItem("content", content), [content]);
-  useEffect(() => localStorage.setItem("role", role), [role]);
-  useEffect(() => localStorage.setItem("choice", JSON.stringify(choiceList)), [
-    choiceList,
-  ]);
+  // ----- event listener for external notifications (e.g., reset) -----
+  useEffect(() => {
+    const resetHandler = () => {
+      setUseOnline(false);
+      setApiKey("");
+      setModelName("");
+    };
+    window.addEventListener("configReset", resetHandler);
+    return () => window.removeEventListener("configReset", resetHandler);
+  }, []);
 
-  /* ── helpers ───────────────────────────────────────── */
-  const reset = () => {
-    setChoiceList([]);
-    setLoading(false);
-    setCurrentQuery(null);
-  };
+  // ----- helper: persist and emit event -----
+  const persistAndNotify = (newState) => {
+    const { useOnline, apiKey, modelName } = newState;
 
-  const startQuery = async ({ txt, role, queryType }) => {
-    // cancel previous request if still pending
-    if (loading) reset();
+    localStorage.setItem(LOCAL_KEYS.useOnline, useOnline);
+    localStorage.setItem(LOCAL_KEYS.apiKey, apiKey);
+    localStorage.setItem(LOCAL_KEYS.model, modelName);
 
-    const id = ++requestIdRef.current;
-    setLoading(true);
-    setChoiceList([]);
-    setCurrentQuery(queryType);
-
-    await queryChoice({ txt, role, queryType }, (text) => {
-      if (requestIdRef.current !== id) return; // stale data
-      setChoiceList(prev=>[(prev[0]||'')+text]);
+    const event = new CustomEvent("configSaved", {
+      detail: { useOnline, apiKey, modelName },
     });
-
-    if (requestIdRef.current !== id) return;
-    setLoading(false);
+    window.dispatchEvent(event);
   };
 
-  const writeAfter = () => {
-    const el = contentRef.current;
-    const pos = el.selectionStart;
-    insertPosRef.current = pos;
-    const txt = content.slice(0, pos);
-    startQuery({ txt, role, queryType: "after" });
+  // ----- handlers -----
+  const handleCheckbox = (e) => {
+    const checked = e.target.checked;
+    setUseOnline(checked);
+    persistAndNotify({ useOnline: checked, apiKey, modelName });
   };
 
-  const writeReplace = () => {
-    const el = contentRef.current;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    if (start === end) return; // no selection
-    replaceRangeRef.current = { start, end };
-    const txt = content.slice(start, end);
-    startQuery({ txt, role, queryType: "replace" });
+  const handleApiKey = (e) => {
+    const val = e.target.value;
+    setApiKey(val);
+    persistAndNotify({ useOnline, apiKey: val, modelName });
   };
 
-  const handleChoiceClick = (choice) => {
-    if (currentQuery === "after") {
-      const pos = insertPosRef.current;
-      const newText = content.slice(0, pos) + choice + content.slice(pos);
-      setContent(newText);
-      // move cursor after inserted text
-      setTimeout(() => {
-        const el = contentRef.current;
-        el.focus();
-        const newPos = pos + choice.length;
-        el.setSelectionRange(newPos, newPos);
-      }, 0);
-    } else if (currentQuery === "replace") {
-      const range = replaceRangeRef.current;
-      if (!range) return;
-      const { start, end } = range;
-      const newText = content.slice(0, start) + choice + content.slice(end);
-      setContent(newText);
-      setTimeout(() => {
-        const el = contentRef.current;
-        el.focus();
-        const newPos = start + choice.length;
-        el.setSelectionRange(newPos, newPos);
-      }, 0);
-    }
-    // after using the result, clear it
-    reset();
+  const handleModelName = (e) => {
+    const val = e.target.value;
+    setModelName(val);
+    persistAndNotify({ useOnline, apiKey, modelName: val });
   };
 
-  const handleKeyDown = (e) => {
-    if (e.ctrlKey && (e.key === "i" || e.key === "I")) {
-      e.preventDefault();
-      writeAfter();
-    }
-  };
+  // ----- optional: log when saved -----
+  useEffect(() => {
+    const logger = (e) => {
+      console.log("Configuration saved:", e.detail);
+    };
+    window.addEventListener("configSaved", logger);
+    return () => window.removeEventListener("configSaved", logger);
+  }, []);
 
-  const handleSelectionChange = () => {
-    const el = contentRef.current;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-
-    // clear previous timer
-    if (selectionTimerRef.current) {
-      clearTimeout(selectionTimerRef.current);
-      selectionTimerRef.current = null;
-    }
-
-    if (start === end) return; // no selection
-
-    // start a new timer: 1 s of inactivity → writeReplace()
-    selectionTimerRef.current = setTimeout(() => {
-      writeReplace();
-    }, 1000);
-  };
-
-  /* ── render ─────────────────────────────────────────── */
   return (
-    <div className="layout">
+    <div className="config-bar">
+      <label className="config-checkbox">
+        <input type="checkbox" checked={useOnline} onChange={handleCheckbox} />
+        Use Online Model
+      </label>
+
+      {useOnline && (
+        <div className="config-inputs">
+          <input
+            type="text"
+            className="config-input"
+            placeholder="Enter your API Key"
+            value={apiKey}
+            onChange={handleApiKey}
+          />
+          <input
+            type="text"
+            className="config-input"
+            placeholder="Enter model name"
+            value={modelName}
+            onChange={handleModelName}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* component */
+function TextAreaWithChoices() {
+  const contentRef = useRef(null);
+  const roleRef = useRef(null);
+  const choiceRef= useRef(null);
+
+  const [content, setContent] = useState(() => localStorage.getItem("content") ?? "");
+  const [role, setRole] = useState(() => localStorage.getItem("role") ?? "");
+  const [choice, setChoice] = useState(() => {
+    const stored = localStorage.getItem("choice");
+    return stored ? JSON.parse(stored) : [];
+  });
+  const [loading, setLoading] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [lastQueryType, setLastQueryType] = useState(null); // 'after' | 'replace'
+
+  const config=React.useRef({
+    useOnline: false,
+    apiKey: '',
+    modelName: '',
+  })
+
+  // request serial to ignore outdated responses
+  const requestIdRef = useRef(0);
+
+  /* persist */
+  useEffect(() => {
+    localStorage.setItem("content", content);
+  }, [content]);
+
+  useEffect(() => {
+    localStorage.setItem("role", role);
+  }, [role]);
+
+  useEffect(() => {
+    localStorage.setItem("choice", JSON.stringify(choice));
+  }, [choice]);
+
+  /* keyboard handling */
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (!e.ctrlKey) return;
+      if (e.key === "i" || e.key === "I") {
+        e.preventDefault();
+        writeAfter();
+      } else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        const selStart = contentRef.current.selectionStart;
+        const selEnd = contentRef.current.selectionEnd;
+        if (selStart !== selEnd) {
+          writeReplace();
+        }
+      }
+    },
+    [content, role]
+  );
+
+  /* writeAfter */
+  const writeAfter = useCallback(() => {
+    if (loading) {
+      // cancel previous by resetting UI; ignore its later callbacks
+      requestIdRef.current += 1;
+      resetState(setChoice, setLoading, setPending);
+    }
+
+    const textarea = contentRef.current;
+    const cursorPos = textarea.selectionStart;
+    const txt = content.slice(0, cursorPos);
+    const payload = { txt, role, queryType: "after" };
+    startQuery(payload);
+    setLastQueryType("after");
+  }, [content, role, loading]);
+
+  /* writeReplace */
+  const writeReplace = useCallback(() => {
+    if (loading) {
+      requestIdRef.current += 1;
+      resetState(setChoice, setLoading, setPending);
+    }
+
+    const textarea = contentRef.current;
+    const selStart = textarea.selectionStart;
+    const selEnd = textarea.selectionEnd;
+    const txt = content.slice(selStart, selEnd);
+    const payload = { txt, role, queryType: "replace" };
+    startQuery(payload);
+    setLastQueryType("replace");
+  }, [content, role, loading]);
+
+  /* start query */
+  const startQuery = useCallback(
+    async (payload) => {
+      const currentId = ++requestIdRef.current;
+      setLoading(true);
+      setPending(true);
+      setChoice([]); // clear previous options but keep pending flag
+
+      try {
+        const {useOnline, ...c}=config.current
+        await queryChoice(payload, useOnline? c: {}, (text) => {
+          if (currentId !== requestIdRef.current) return; // stale response
+          // setChoice((prev) => [...prev, text]);
+          setChoice(prev=>[(prev[0]||'')+text])
+          choiceRef.current.scrollTop=9e9
+        });
+      } finally {
+        if (currentId === requestIdRef.current) {
+          setLoading(false);
+          setPending(false);
+        }
+      }
+    },
+    []
+  );
+
+  /* option click handling */
+  const handleOptionClick = (option) => {
+    const textarea = contentRef.current;
+    const selStart = textarea.selectionStart;
+    const selEnd = textarea.selectionEnd;
+
+    if (lastQueryType === "after") {
+      // insert at cursor
+      const before = content.slice(0, selStart);
+      const after = content.slice(selStart);
+      const newContent = before + option + after;
+      setContent(newContent);
+      // place cursor after inserted text
+      const newPos = before.length + option.length;
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(newPos, newPos);
+      }, 0);
+    } else if (lastQueryType === "replace") {
+      // replace selected range
+      const before = content.slice(0, selStart);
+      const after = content.slice(selEnd);
+      const newContent = before + option + after;
+      setContent(newContent);
+      const newPos = before.length + option.length;
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(newPos, newPos);
+      }, 0);
+    }
+
+    // after using an option, clear the choice list
+    resetState(setChoice, setLoading, setPending);
+  };
+
+  /* render usage guide */
+  const renderGuide = () => (
+    <div>
+      <p>Press <strong>Ctrl+I</strong> to generate suggestions after the cursor.</p>
+      <p>Press <strong>Ctrl+R</strong> (with a selection) to generate replacement suggestions.</p>
+    </div>
+  );
+
+  /* component UI */
+  return <>
+    <ConfigBar onUpdate={e=>{
+      Object.assign(config.current, e)
+    }} />
+    <div className="container">
       <div className="left">
         <textarea
           placeHolder="Please write content here."
-          className="content"
           ref={contentRef}
+          className="content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          onMouseUp={handleSelectionChange}
-          onKeyUp={handleSelectionChange}
         />
       </div>
       <div className="right">
         <textarea
           placeHolder="Please set the AI Agent's role information here."
+          ref={roleRef}
           className="role"
           value={role}
           onChange={(e) => setRole(e.target.value)}
+          onKeyDown={handleKeyDown}
         />
-        <div className="choice">
-          {loading && <div className="pending">Pending..</div>}
-          {choiceList.map((c, i) => (
-            <div
-              key={i}
-              className="option"
-              onClick={() => loading || handleChoiceClick(c)}
-            >
-              {c}
+        <div className="choice" ref={choiceRef}>
+          {pending && <div>Pending..</div>}
+          {choice.filter(x=>x?.trim()).map((opt, idx) => (
+            <div key={idx} className={"option "+(pending || 'done')} onClick={() => pending || handleOptionClick(opt)}>
+              {opt}
             </div>
           ))}
-          {
-            !loading && !choiceList.length && <div className='guide'>
-              <div className='line'>1. Press Ctrl+I to start auto-completion.</div>
-              <div className='line'>2. Select text to automatically rewrite the specified content.</div>
-            </div>
-          }
+          {!pending && choice.length === 0 && renderGuide()}
         </div>
       </div>
     </div>
-  );
+  </>
 }
-
 
 
 ReactDOM.render(<TextAreaWithChoices />, document.querySelector('#app'))
