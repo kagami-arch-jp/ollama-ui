@@ -41,6 +41,23 @@ ${txt}
 \`\`\`
 `
 
+async function cdn2local(url) {
+  const fs=require('fs')
+  const fn=__dirname+'/../../dist/local-asset/'+url.replace(/[^a-z\d\.]/g, '_')
+  if(!fs.existsSync(fn)) {
+    const x=await fetch(url)
+    const headers={}
+    x.headers.forEach((value, key)=>{
+      headers[key]=value
+    })
+    fs.writeFileSync(fn+'.h', JSON.stringify(headers))
+    fs.writeFileSync(fn, Buffer.from(await x.arrayBuffer()))
+  }
+  const headers=JSON.parse(fs.readFileSync(fn+'.h', 'utf8'))
+  setResponseHeaders(headers)
+  sendFile(fn)
+}
+
 if($_QUERY.a) Sync.Push(async ()=>{
   const {a}=$_QUERY
 
@@ -110,18 +127,25 @@ if($_QUERY.a) Sync.Push(async ()=>{
     })
   }else if(a==='reset') {
     unbindClient()
+  }else if(a==='asset') {
+    await cdn2local(decodeURIComponent($_QUERY.url))
   }
-
 })
-else // template ?>
+else{ ?>
 <!doctype html>
 <meta charset=utf8 />
-<script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/less" ></script>
+<?js
+const cdnjs=[
+  "https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js",
+  "https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js",
+  "https://unpkg.com/@babel/standalone/babel.min.js",
+  "https://cdn.jsdelivr.net/npm/less",
+]
+for(const js of cdnjs) {
+  echo(`<script src="?a=asset&url=${encodeURIComponent(js)}"></script>`)
+}
+?>
 <div id="app"></div>
-
 <style rel="stylesheet/less" type="text/css">
 html, body, #app{
   background: #eee;
@@ -882,3 +906,4 @@ function TextAreaWithChoices() {
 
 ReactDOM.render(<TextAreaWithChoices />, document.querySelector('#app'))
 </script>
+<?js }
